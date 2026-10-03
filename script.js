@@ -2,10 +2,20 @@
 
 /* =========================================================
    DARDOMAMOGS — COMPLETE SCRIPT.JS
-   Single shopping website
-   Google Forms ordering
-   Google Sheets / Apps Script tracking
-   NO FIREBASE
+   ---------------------------------------------------------
+   • Shopping cart
+   • Product rendering
+   • Store hours: 2 PM → 2 AM
+   • Checkout
+   • Review Order
+   • Confirm Order
+   • Google Forms submission
+   • Google Sheets / Apps Script tracking
+   • Order number + tracking code
+   • Local order backup
+   • Delivery status
+   • Mobile menu
+   • No Firebase
    ========================================================= */
 
 
@@ -16,27 +26,21 @@
 const CONFIG = {
     storeName: "DardomaMOGS",
 
-    // Store: 2:00 PM → 2:00 AM
     openingHour: 14,
     closingHour: 2,
 
-    // Delivery fee
     deliveryFee: 20,
 
-    // Local storage
     cartStorageKey: "dardoma_mogs_cart",
     ordersStorageKey: "dardoma_mogs_orders",
     lastOrderKey: "dardoma_mogs_last_order",
 
-    // Google Form
     googleFormAction:
         "https://docs.google.com/forms/d/e/1FAIpQLSfcFu09aQGcBszMQvutwk_huj8BK4CqtSwdU8HerbVei-lftw/formResponse",
 
-    // Google Apps Script tracking API
     trackingApi:
         "https://script.google.com/macros/s/AKfycby9GyMIelR3lAnmaAaJlPBWMKw8v_SdIDuc6ZT_useCESQCM-TyPvXVYPG-JTOkB5WAVg/exec",
 
-    // Exact Google Form entry IDs
     googleFormEntries: {
         name: "entry.1661561910",
         contact: "entry.544821231",
@@ -88,17 +92,13 @@ let isSubmittingOrder = false;
 
 
 /* =========================================================
-   SHORTCUT
+   HELPER
    ========================================================= */
 
 function $(id) {
     return document.getElementById(id);
 }
 
-
-/* =========================================================
-   BASIC HELPERS
-   ========================================================= */
 
 function money(value) {
     return `${Number(value || 0).toFixed(2)} EGP`;
@@ -116,10 +116,13 @@ function escapeHTML(value) {
 
 
 function showToast(message) {
+
     let toast = $("toast");
 
     if (!toast) {
+
         toast = document.createElement("div");
+
         toast.id = "toast";
 
         toast.style.position = "fixed";
@@ -127,13 +130,13 @@ function showToast(message) {
         toast.style.bottom = "25px";
         toast.style.transform = "translateX(-50%)";
         toast.style.zIndex = "99999";
-        toast.style.padding = "13px 18px";
-        toast.style.borderRadius = "12px";
+        toast.style.padding = "13px 20px";
+        toast.style.borderRadius = "14px";
         toast.style.background = "#172018";
         toast.style.color = "#fff";
-        toast.style.fontWeight = "700";
+        toast.style.fontWeight = "800";
         toast.style.boxShadow =
-            "0 10px 30px rgba(0,0,0,.2)";
+            "0 12px 35px rgba(0,0,0,.25)";
         toast.style.maxWidth = "90%";
         toast.style.textAlign = "center";
 
@@ -156,17 +159,9 @@ function showToast(message) {
    ========================================================= */
 
 function isStoreOpen() {
-    const now = new Date();
-    const hour = now.getHours();
 
-    /*
-       Open:
-       14:00 → 23:59
-       00:00 → 01:59
-
-       Closed:
-       02:00 → 13:59
-    */
+    const hour =
+        new Date().getHours();
 
     return (
         hour >= CONFIG.openingHour ||
@@ -176,7 +171,9 @@ function isStoreOpen() {
 
 
 function updateStoreStatus() {
-    const open = isStoreOpen();
+
+    const open =
+        isStoreOpen();
 
     document
         .querySelectorAll(
@@ -189,9 +186,10 @@ function updateStoreStatus() {
                 !open
             );
 
-            element.textContent = open
-                ? "🟢 We're Open"
-                : "🔴 We're Closed";
+            element.textContent =
+                open
+                    ? "🟢 We're Open"
+                    : "🔴 We're Closed";
         });
 
     const closedNotice =
@@ -200,14 +198,6 @@ function updateStoreStatus() {
     if (closedNotice) {
         closedNotice.hidden = open;
     }
-
-    document
-        .querySelectorAll(
-            "[data-store-action]"
-        )
-        .forEach(button => {
-            button.disabled = !open;
-        });
 }
 
 
@@ -216,7 +206,9 @@ function updateStoreStatus() {
    ========================================================= */
 
 function loadCart() {
+
     try {
+
         const saved =
             localStorage.getItem(
                 CONFIG.cartStorageKey
@@ -239,8 +231,9 @@ function loadCart() {
         return parsed;
 
     } catch (error) {
+
         console.warn(
-            "Could not load cart:",
+            "Cart loading error:",
             error
         );
 
@@ -250,14 +243,18 @@ function loadCart() {
 
 
 function saveCart() {
+
     try {
+
         localStorage.setItem(
             CONFIG.cartStorageKey,
             JSON.stringify(cart)
         );
+
     } catch (error) {
+
         console.warn(
-            "Could not save cart:",
+            "Cart saving error:",
             error
         );
     }
@@ -269,6 +266,7 @@ function saveCart() {
    ========================================================= */
 
 function getCartItems() {
+
     return Object.values(cart)
         .filter(item =>
             item &&
@@ -284,6 +282,7 @@ function getCartItems() {
 
 
 function getCartCount() {
+
     return getCartItems().reduce(
         (total, item) =>
             total + item.quantity,
@@ -293,6 +292,7 @@ function getCartCount() {
 
 
 function getSubtotal() {
+
     return getCartItems().reduce(
         (total, item) =>
             total +
@@ -304,13 +304,15 @@ function getSubtotal() {
 
 
 function getDeliveryFee() {
-    return getCartItems().length > 0
+
+    return getCartItems().length
         ? CONFIG.deliveryFee
         : 0;
 }
 
 
 function getTotal() {
+
     return (
         getSubtotal() +
         getDeliveryFee()
@@ -322,28 +324,22 @@ function getTotal() {
    ADD TO CART
    ========================================================= */
 
-function addToCart(productId, quantity = 1) {
+function addToCart(
+    productId,
+    quantity = 1
+) {
 
     const product =
         PRODUCTS[productId];
 
     if (!product) {
-        console.error(
-            "Unknown product:",
-            productId
-        );
-
         return;
     }
 
-    /*
-       Do not allow ordering while
-       the store is closed.
-    */
-
     if (!isStoreOpen()) {
+
         showToast(
-            "🔴 DardomaMOGS is currently closed. We're open from 2:00 PM to 2:00 AM."
+            "🔴 We're closed right now. We're open from 2:00 PM to 2:00 AM."
         );
 
         return;
@@ -356,6 +352,7 @@ function addToCart(productId, quantity = 1) {
         );
 
     if (!cart[productId]) {
+
         cart[productId] = {
             id: productId,
             quantity: 0
@@ -383,6 +380,7 @@ function changeQuantity(
     productId,
     amount
 ) {
+
     if (!cart[productId]) {
         return;
     }
@@ -405,7 +403,7 @@ function changeQuantity(
 
 
 /* =========================================================
-   REMOVE PRODUCT
+   REMOVE ITEM
    ========================================================= */
 
 function removeFromCart(productId) {
@@ -425,8 +423,9 @@ function removeFromCart(productId) {
     updateCartCount();
 
     if (product) {
+
         showToast(
-            `${product.name} removed from cart.`
+            `${product.name} removed.`
         );
     }
 }
@@ -449,7 +448,9 @@ function clearCart() {
     renderCart();
     updateCartCount();
 
-    showToast("Cart cleared.");
+    showToast(
+        "Cart cleared."
+    );
 }
 
 
@@ -482,7 +483,7 @@ function updateCartCount() {
 
 
 /* =========================================================
-   PRODUCT RENDERING
+   PRODUCTS
    ========================================================= */
 
 function renderProducts() {
@@ -496,56 +497,55 @@ function renderProducts() {
 
     grid.innerHTML =
         Object.values(PRODUCTS)
-            .map(product => {
+            .map(product => `
 
-                return `
-                    <article class="product-card">
+                <article class="product-card">
 
-                        <div class="product-image">
-                            ${product.emoji}
-                        </div>
+                    <div class="product-image">
+                        ${product.emoji}
+                    </div>
 
-                        <div>
-                            <h3>
-                                ${escapeHTML(
-                                    product.name
-                                )}
-                            </h3>
+                    <div>
+                        <h3>
+                            ${escapeHTML(
+                                product.name
+                            )}
+                        </h3>
 
-                            <p>
-                                ${escapeHTML(
-                                    product.description
-                                )}
-                            </p>
-                        </div>
+                        <p>
+                            ${escapeHTML(
+                                product.description
+                            )}
+                        </p>
+                    </div>
 
-                        <div class="price-row">
+                    <div class="price-row">
 
-                            <span class="price">
-                                ${money(
-                                    product.price
-                                )}
-                            </span>
+                        <span class="price">
+                            ${money(
+                                product.price
+                            )}
+                        </span>
 
-                            <button
-                                class="btn primary"
-                                type="button"
-                                onclick="addToCart('${product.id}')"
-                            >
-                                Add to Cart
-                            </button>
+                        <button
+                            type="button"
+                            class="btn primary"
+                            onclick="addToCart('${product.id}')"
+                        >
+                            Add to Cart
+                        </button>
 
-                        </div>
+                    </div>
 
-                    </article>
-                `;
-            })
+                </article>
+
+            `)
             .join("");
 }
 
 
 /* =========================================================
-   CART RENDERING
+   CART RENDER
    ========================================================= */
 
 function renderCart() {
@@ -563,6 +563,7 @@ function renderCart() {
     if (!items.length) {
 
         container.innerHTML = `
+
             <div class="empty-cart">
 
                 <div class="empty-icon">
@@ -601,6 +602,7 @@ function renderCart() {
                     item.quantity;
 
                 return `
+
                     <div class="cart-row">
 
                         <div class="cart-thumb">
@@ -644,8 +646,8 @@ function renderCart() {
                             </div>
 
                             <button
-                                class="remove"
                                 type="button"
+                                class="remove"
                                 onclick="removeFromCart('${product.id}')"
                             >
                                 Remove
@@ -660,7 +662,9 @@ function renderCart() {
                         </div>
 
                     </div>
+
                 `;
+
             }).join("");
     }
 
@@ -705,13 +709,12 @@ function renderSummary() {
 
         checkoutButton.disabled =
             getCartItems().length === 0;
-
     }
 }
 
 
 /* =========================================================
-   CHECKOUT
+   PREPARE CHECKOUT
    ========================================================= */
 
 function prepareCheckout() {
@@ -744,7 +747,6 @@ function prepareCheckout() {
         checkout.scrollIntoView({
             behavior: "smooth"
         });
-
     }
 }
 
@@ -762,11 +764,8 @@ function renderCheckoutPreview() {
         return;
     }
 
-    const items =
-        getCartItems();
-
     const lines =
-        items.map(item =>
+        getCartItems().map(item =>
             `${item.quantity} × ${item.product.name} — ${money(
                 item.product.price *
                 item.quantity
@@ -799,52 +798,72 @@ function renderCheckoutPreview() {
 
 
 /* =========================================================
-   BUILD ORDER TEXT
-   ========================================================= */
-
-function formatGoogleFormOrder(order) {
-
-    const itemsText =
-        order.items
-            .map(item =>
-                `${item.quantity} × ${item.name} — ${money(
-                    item.price *
-                    item.quantity
-                )}`
-            )
-            .join("\n");
-
-    return [
-        `Order Number: ${order.orderNumber}`,
-        `Tracking Code: ${order.trackingToken}`,
-        "",
-        itemsText,
-        "",
-        `Subtotal: ${money(order.subtotal)}`,
-        `Delivery: ${money(order.deliveryFee)}`,
-        `Total: ${money(order.total)}`
-    ].join("\n");
-}
-
-
-/* =========================================================
    CREATE ORDER NUMBER
    ========================================================= */
 
 function generateOrderNumber() {
 
-    const number =
-        Math.floor(
-            1000 +
-            Math.random() * 9000
-        );
+    let number;
+    let exists = true;
 
-    return `DM-${number}`;
+    while (exists) {
+
+        number =
+            Math.floor(
+                1000 +
+                Math.random() * 9000
+            );
+
+        const orderNumber =
+            `DM-${number}`;
+
+        exists =
+            orderExists(
+                orderNumber
+            );
+
+        if (!exists) {
+            return orderNumber;
+        }
+    }
 }
 
 
 /* =========================================================
-   CREATE TRACKING CODE
+   CHECK EXISTING ORDER
+   ========================================================= */
+
+function orderExists(orderNumber) {
+
+    try {
+
+        const orders =
+            JSON.parse(
+                localStorage.getItem(
+                    CONFIG.ordersStorageKey
+                ) || "[]"
+            );
+
+        if (!Array.isArray(orders)) {
+            return false;
+        }
+
+        return orders.some(
+            order =>
+                order &&
+                order.orderNumber ===
+                    orderNumber
+        );
+
+    } catch {
+
+        return false;
+    }
+}
+
+
+/* =========================================================
+   TRACKING CODE
    ========================================================= */
 
 function generateTrackingToken() {
@@ -852,11 +871,11 @@ function generateTrackingToken() {
     const characters =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    let result = "";
+    let code = "";
 
     for (let i = 0; i < 10; i++) {
 
-        result +=
+        code +=
             characters[
                 Math.floor(
                     Math.random() *
@@ -865,7 +884,7 @@ function generateTrackingToken() {
             ];
     }
 
-    return result;
+    return code;
 }
 
 
@@ -970,7 +989,6 @@ function saveOrderLocally(order) {
     } catch {
 
         orders = [];
-
     }
 
     orders.push(order);
@@ -998,21 +1016,42 @@ function saveOrderLocally(order) {
 
 
 /* =========================================================
-   GOOGLE FORM — IMPORTANT FIX
-   =========================================================
+   GOOGLE FORM ORDER TEXT
+   ========================================================= */
 
-   We DO NOT use:
+function formatGoogleFormOrder(order) {
 
-       form.submit()
+    const itemLines =
+        order.items
+            .map(item =>
+                `${item.quantity} × ${item.name} — ${money(
+                    item.price *
+                    item.quantity
+                )}`
+            )
+            .join("\n");
 
-   Instead, we create a hidden iframe and submit
-   the Google Form directly into it.
+    return [
+        `Order Number: ${order.orderNumber}`,
+        `Tracking Code: ${order.trackingToken}`,
+        "",
+        itemLines,
+        "",
+        `Subtotal: ${money(
+            order.subtotal
+        )}`,
+        `Delivery: ${money(
+            order.deliveryFee
+        )}`,
+        `Total: ${money(
+            order.total
+        )}`
+    ].join("\n");
+}
 
-   This prevents:
-   - page navigation
-   - form.submit() conflicts
-   - the checkout page disappearing
-   - the Google Form opening in the current tab
+
+/* =========================================================
+   CREATE HIDDEN GOOGLE FORM IFRAME
    ========================================================= */
 
 function createGoogleFormIframe() {
@@ -1065,200 +1104,10 @@ function createGoogleFormIframe() {
 
 
 /* =========================================================
-   SUBMIT GOOGLE FORM
+   ENSURE FORM INPUT
    ========================================================= */
 
-function submitGoogleForm(order) {
-
-    const form =
-        $("realGoogleForm");
-
-    if (!form) {
-
-        console.error(
-            "realGoogleForm was not found."
-        );
-
-        showToast(
-            "Order form is missing from the page."
-        );
-
-        return false;
-    }
-
-    const entries =
-        CONFIG.googleFormEntries;
-
-    /*
-       Find existing hidden inputs.
-    */
-
-    const gName =
-        $("gName");
-
-    const gContact =
-        $("gContact");
-
-    const gOrder =
-        $("gOrder");
-
-    const gNotes =
-        $("gNotes");
-
-    const gPayment =
-        $("gPayment");
-
-
-    /*
-       Fill the existing inputs.
-    */
-
-    if (gName) {
-        gName.value =
-            order.name;
-    }
-
-    if (gContact) {
-        gContact.value =
-            order.contact;
-    }
-
-    if (gOrder) {
-        gOrder.value =
-            formatGoogleFormOrder(
-                order
-            );
-    }
-
-    if (gNotes) {
-
-        gNotes.value =
-            [
-                `Order Number: ${order.orderNumber}`,
-                `Tracking Code: ${order.trackingToken}`,
-                order.notes
-            ]
-                .filter(Boolean)
-                .join("\n");
-    }
-
-    if (gPayment) {
-        gPayment.value =
-            order.payment;
-    }
-
-
-    /*
-       Make absolutely sure the correct
-       Google Form entry names exist.
-    */
-
-    ensureInputName(
-        form,
-        "gName",
-        entries.name,
-        order.name
-    );
-
-    ensureInputName(
-        form,
-        "gContact",
-        entries.contact,
-        order.contact
-    );
-
-    ensureInputName(
-        form,
-        "gOrder",
-        entries.order,
-        formatGoogleFormOrder(order)
-    );
-
-    ensureInputName(
-        form,
-        "gNotes",
-        entries.notes,
-        [
-            `Order Number: ${order.orderNumber}`,
-            `Tracking Code: ${order.trackingToken}`,
-            order.notes
-        ]
-            .filter(Boolean)
-            .join("\n")
-    );
-
-    ensureInputName(
-        form,
-        "gPayment",
-        entries.payment,
-        order.payment
-    );
-
-
-    /*
-       Set the exact Google Forms endpoint.
-    */
-
-    form.action =
-        CONFIG.googleFormAction;
-
-    form.method =
-        "POST";
-
-    form.target =
-        "googleFormSubmitFrame";
-
-
-    /*
-       Create the iframe.
-    */
-
-    createGoogleFormIframe();
-
-
-    /*
-       Submit using the native HTMLFormElement
-       prototype.
-
-       This avoids any element named "submit"
-       overriding the submit method.
-    */
-
-    try {
-
-        HTMLFormElement
-            .prototype
-            .submit
-            .call(form);
-
-        console.log(
-            "DardomaMOGS Google Form submitted:",
-            order.orderNumber
-        );
-
-        return true;
-
-    } catch (error) {
-
-        console.error(
-            "Google Form submission failed:",
-            error
-        );
-
-        showToast(
-            "The order could not be sent. Please try again."
-        );
-
-        return false;
-    }
-}
-
-
-/* =========================================================
-   ENSURE GOOGLE FORM INPUT
-   ========================================================= */
-
-function ensureInputName(
+function ensureGoogleInput(
     form,
     id,
     name,
@@ -1289,9 +1138,6 @@ function ensureInputName(
         input.id =
             id;
 
-        input.name =
-            name;
-
         form.appendChild(
             input
         );
@@ -1306,10 +1152,179 @@ function ensureInputName(
 
 
 /* =========================================================
+   SUBMIT GOOGLE FORM
+   ========================================================= */
+
+function submitGoogleForm(order) {
+
+    const form =
+        $("realGoogleForm");
+
+    if (!form) {
+
+        console.error(
+            "realGoogleForm does not exist."
+        );
+
+        showToast(
+            "The order form is missing."
+        );
+
+        return false;
+    }
+
+    const entries =
+        CONFIG.googleFormEntries;
+
+    const orderText =
+        formatGoogleFormOrder(
+            order
+        );
+
+    const notesText =
+        [
+            `Order Number: ${order.orderNumber}`,
+            `Tracking Code: ${order.trackingToken}`,
+            order.notes
+        ]
+            .filter(Boolean)
+            .join("\n");
+
+
+    /*
+       Create/repair every required
+       Google Form field.
+    */
+
+    ensureGoogleInput(
+        form,
+        "gName",
+        entries.name,
+        order.name
+    );
+
+    ensureGoogleInput(
+        form,
+        "gContact",
+        entries.contact,
+        order.contact
+    );
+
+    ensureGoogleInput(
+        form,
+        "gOrder",
+        entries.order,
+        orderText
+    );
+
+    ensureGoogleInput(
+        form,
+        "gNotes",
+        entries.notes,
+        notesText
+    );
+
+    ensureGoogleInput(
+        form,
+        "gPayment",
+        entries.payment,
+        order.payment
+    );
+
+
+    /*
+       Configure the real Google Forms
+       endpoint.
+    */
+
+    form.action =
+        CONFIG.googleFormAction;
+
+    form.method =
+        "POST";
+
+    form.target =
+        "googleFormSubmitFrame";
+
+
+    /*
+       Make sure the iframe exists.
+    */
+
+    createGoogleFormIframe();
+
+
+    /*
+       DEBUG LOG.
+    */
+
+    console.log(
+        "Sending DardomaMOGS order:",
+        {
+            orderNumber:
+                order.orderNumber,
+
+            trackingCode:
+                order.trackingToken,
+
+            name:
+                order.name,
+
+            contact:
+                order.contact,
+
+            payment:
+                order.payment
+        }
+    );
+
+
+    /*
+       IMPORTANT:
+       Use the native form prototype so
+       an element named "submit" cannot
+       break the submission.
+    */
+
+    try {
+
+        HTMLFormElement
+            .prototype
+            .submit
+            .call(form);
+
+        console.log(
+            "Google Form POST sent."
+        );
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "Google Form POST failed:",
+            error
+        );
+
+        return false;
+    }
+}
+
+
+/* =========================================================
    REVIEW ORDER
    ========================================================= */
 
 function reviewOrder() {
+
+    console.log(
+        "Review Order clicked."
+    );
+
+
+    /*
+       Check store.
+    */
 
     if (!isStoreOpen()) {
 
@@ -1317,8 +1332,13 @@ function reviewOrder() {
             "🔴 The store is closed right now."
         );
 
-        return;
+        return false;
     }
+
+
+    /*
+       Check cart.
+    */
 
     if (!getCartItems().length) {
 
@@ -1326,8 +1346,13 @@ function reviewOrder() {
             "Your cart is empty."
         );
 
-        return;
+        return false;
     }
+
+
+    /*
+       Find form.
+    */
 
     const form =
         $("checkoutForm");
@@ -1335,18 +1360,32 @@ function reviewOrder() {
     if (!form) {
 
         console.error(
-            "checkoutForm not found."
+            "checkoutForm was not found."
         );
 
-        return;
+        showToast(
+            "Checkout form could not be found."
+        );
+
+        return false;
     }
+
+
+    /*
+       Validate required fields.
+    */
 
     if (!form.checkValidity()) {
 
         form.reportValidity();
 
-        return;
+        return false;
     }
+
+
+    /*
+       Get customer data.
+    */
 
     const name =
         $("customerName")
@@ -1367,42 +1406,76 @@ function reviewOrder() {
             ?.value
             .trim() || "";
 
-    const review =
+
+    /*
+       Find review area.
+    */
+
+    let review =
         $("orderReview");
+
+
+    /*
+       If the HTML does not contain
+       orderReview, create it.
+    */
 
     if (!review) {
 
-        console.error(
-            "orderReview not found."
-        );
+        review =
+            document.createElement(
+                "div"
+            );
 
-        return;
+        review.id =
+            "orderReview";
+
+        review.className =
+            "checkout-review";
+
+        form.parentNode.insertBefore(
+            review,
+            form.nextSibling
+        );
     }
+
 
     const items =
         getCartItems();
 
+
+    /*
+       Build review.
+    */
+
     review.innerHTML = `
+
         <div class="review-card">
 
             <h3>
-                Review Your Order
+                🧾 Review Your Order
             </h3>
 
             <div class="review-details">
 
                 <p>
-                    <strong>Name:</strong>
+                    <strong>
+                        Customer:
+                    </strong>
                     ${escapeHTML(name)}
                 </p>
 
                 <p>
-                    <strong>Contact:</strong>
+                    <strong>
+                        Contact:
+                    </strong>
                     ${escapeHTML(contact)}
                 </p>
 
                 <p>
-                    <strong>Payment:</strong>
+                    <strong>
+                        Payment:
+                    </strong>
                     ${escapeHTML(payment)}
                 </p>
 
@@ -1410,7 +1483,9 @@ function reviewOrder() {
                     notes
                         ? `
                             <p>
-                                <strong>Notes:</strong>
+                                <strong>
+                                    Notes:
+                                </strong>
                                 ${escapeHTML(notes)}
                             </p>
                         `
@@ -1423,28 +1498,52 @@ function reviewOrder() {
 
                 ${items
                     .map(item => `
-                        <p>
-                            ${item.quantity}
-                            ×
-                            ${escapeHTML(
-                                item.product.name
-                            )}
-                            —
-                            ${money(
-                                item.product.price *
-                                item.quantity
-                            )}
-                        </p>
+
+                        <div
+                            style="
+                                display:flex;
+                                justify-content:space-between;
+                                gap:15px;
+                                padding:7px 0;
+                            "
+                        >
+
+                            <span>
+                                ${item.quantity}
+                                ×
+                                ${escapeHTML(
+                                    item.product.name
+                                )}
+                            </span>
+
+                            <strong>
+                                ${money(
+                                    item.product.price *
+                                    item.quantity
+                                )}
+                            </strong>
+
+                        </div>
+
                     `)
                     .join("")}
 
             </div>
 
-            <div class="review-total">
+            <div
+                class="review-total"
+                style="
+                    display:flex;
+                    justify-content:space-between;
+                    border-top:1px solid #eadfca;
+                    margin-top:15px;
+                    padding-top:15px;
+                "
+            >
 
-                <span>
+                <strong>
                     Total
-                </span>
+                </strong>
 
                 <strong>
                     ${money(getTotal())}
@@ -1452,21 +1551,28 @@ function reviewOrder() {
 
             </div>
 
-            <div class="review-actions">
+            <div
+                class="review-actions"
+                style="
+                    display:flex;
+                    gap:10px;
+                    flex-wrap:wrap;
+                    margin-top:20px;
+                "
+            >
 
                 <button
                     type="button"
                     class="btn secondary"
-                    onclick="cancelReview()"
+                    id="editOrderButton"
                 >
-                    Edit Order
+                    ← Edit Order
                 </button>
 
                 <button
                     type="button"
                     class="btn primary"
                     id="finalConfirmOrderButton"
-                    onclick="confirmOrder()"
                 >
                     Confirm Order
                 </button>
@@ -1476,12 +1582,67 @@ function reviewOrder() {
         </div>
     `;
 
-    review.hidden = false;
+
+    /*
+       Show review.
+    */
+
+    review.hidden =
+        false;
+
+    review.style.display =
+        "";
+
+
+    /*
+       Edit button.
+    */
+
+    const editButton =
+        $("editOrderButton");
+
+    if (editButton) {
+
+        editButton.onclick =
+            function(event) {
+
+                event.preventDefault();
+
+                cancelReview();
+            };
+    }
+
+
+    /*
+       Confirm button.
+    */
+
+    const confirmButton =
+        $("finalConfirmOrderButton");
+
+    if (confirmButton) {
+
+        confirmButton.onclick =
+            function(event) {
+
+                event.preventDefault();
+
+                confirmOrder();
+            };
+    }
+
+
+    /*
+       Scroll to review.
+    */
 
     review.scrollIntoView({
         behavior: "smooth",
         block: "center"
     });
+
+
+    return true;
 }
 
 
@@ -1501,8 +1662,8 @@ function cancelReview() {
     review.hidden =
         true;
 
-    review.innerHTML =
-        "";
+    review.style.display =
+        "none";
 }
 
 
@@ -1512,13 +1673,24 @@ function cancelReview() {
 
 async function confirmOrder() {
 
+    console.log(
+        "Confirm Order clicked."
+    );
+
+
     /*
-       Prevent double-clicks.
+       Prevent double click.
     */
 
     if (isSubmittingOrder) {
+
+        console.log(
+            "Order already being submitted."
+        );
+
         return;
     }
+
 
     /*
        Store check.
@@ -1533,6 +1705,7 @@ async function confirmOrder() {
         return;
     }
 
+
     /*
        Cart check.
     */
@@ -1546,46 +1719,47 @@ async function confirmOrder() {
         return;
     }
 
+
     /*
-       Form check.
+       Validate checkout.
     */
 
-    const checkoutForm =
+    const form =
         $("checkoutForm");
 
-    if (!checkoutForm) {
+    if (!form) {
 
-        console.error(
-            "checkoutForm not found."
+        showToast(
+            "Checkout form not found."
         );
 
         return;
     }
 
-    if (!checkoutForm.checkValidity()) {
+    if (!form.checkValidity()) {
 
-        checkoutForm.reportValidity();
+        form.reportValidity();
 
         return;
     }
 
 
     /*
-       Lock button.
+       Lock submission.
     */
 
     isSubmittingOrder =
         true;
 
-    const confirmButton =
+    const button =
         $("finalConfirmOrderButton");
 
-    if (confirmButton) {
+    if (button) {
 
-        confirmButton.disabled =
+        button.disabled =
             true;
 
-        confirmButton.textContent =
+        button.textContent =
             "Sending Order...";
     }
 
@@ -1604,7 +1778,7 @@ async function confirmOrder() {
 
 
         /*
-           Save local backup first.
+           Save local backup.
         */
 
         saveOrderLocally(
@@ -1616,12 +1790,12 @@ async function confirmOrder() {
            Send to Google Forms.
         */
 
-        const submitted =
+        const sent =
             submitGoogleForm(
                 order
             );
 
-        if (!submitted) {
+        if (!sent) {
 
             throw new Error(
                 "Google Form submission failed."
@@ -1630,9 +1804,8 @@ async function confirmOrder() {
 
 
         /*
-           Clear cart ONLY after the
-           Google Form was successfully
-           handed to the browser.
+           Clear cart only after
+           successful browser POST.
         */
 
         cart = {};
@@ -1661,32 +1834,14 @@ async function confirmOrder() {
 
 
         /*
-           Reset checkout fields.
+           Reset customer form.
         */
 
-        checkoutForm.reset();
+        form.reset();
 
-
-        /*
-           Save current order again.
-        */
-
-        try {
-
-            localStorage.setItem(
-                CONFIG.lastOrderKey,
-                JSON.stringify(order)
-            );
-
-        } catch {}
-
-
-        /*
-           Log useful debugging information.
-        */
 
         console.log(
-            "DardomaMOGS order completed:",
+            "DardomaMOGS order successfully sent:",
             order
         );
 
@@ -1694,12 +1849,12 @@ async function confirmOrder() {
     } catch (error) {
 
         console.error(
-            "confirmOrder error:",
+            "Order confirmation error:",
             error
         );
 
         showToast(
-            "Something went wrong while sending the order."
+            "Something went wrong. Please try again."
         );
 
     } finally {
@@ -1707,12 +1862,12 @@ async function confirmOrder() {
         isSubmittingOrder =
             false;
 
-        if (confirmButton) {
+        if (button) {
 
-            confirmButton.disabled =
+            button.disabled =
                 false;
 
-            confirmButton.textContent =
+            button.textContent =
                 "Confirm Order";
         }
     }
@@ -1720,82 +1875,62 @@ async function confirmOrder() {
 
 
 /* =========================================================
-   SUCCESS SCREEN
+   SUCCESS
    ========================================================= */
 
 function showOrderSuccess(order) {
 
-    const success =
+    let success =
         $("orderSuccess");
 
-    if (!success) {
 
-        /*
-           If the HTML doesn't have a success
-           section, create a simple one.
-        */
+    /*
+       If HTML already has the section,
+       use it.
+    */
 
-        const fallback =
-            document.createElement(
-                "section"
-            );
+    if (success) {
 
-        fallback.id =
-            "orderSuccess";
+        success.hidden =
+            false;
 
-        fallback.className =
-            "section";
+        const number =
+            $("successOrderNumber");
 
-        fallback.innerHTML = `
-            <div
-                style="
-                    max-width:700px;
-                    margin:auto;
-                    background:#fff;
-                    border:1px solid #eadfca;
-                    border-radius:24px;
-                    padding:30px;
-                    text-align:center;
-                "
-            >
-                <div style="font-size:4rem">
-                    🎉
-                </div>
+        const tracking =
+            $("successTrackingCode");
 
-                <h2>
-                    Order Placed!
-                </h2>
+        if (number) {
+            number.textContent =
+                order.orderNumber;
+        }
 
-                <p>
-                    Thank you for ordering
-                    from DardomaMOGS.
-                </p>
+        if (tracking) {
+            tracking.textContent =
+                order.trackingToken;
+        }
 
-                <p>
-                    Order Number:
-                    <strong>
-                        ${escapeHTML(
-                            order.orderNumber
-                        )}
-                    </strong>
-                </p>
+        document
+            .querySelectorAll(
+                "[data-order-number]"
+            )
+            .forEach(element => {
 
-                <p>
-                    Tracking Code:
-                    <strong>
-                        ${escapeHTML(
-                            order.trackingToken
-                        )}
-                    </strong>
-                </p>
-            </div>
-        `;
+                element.textContent =
+                    order.orderNumber;
+            });
 
-        document.body.appendChild(
-            fallback
-        );
+        document
+            .querySelectorAll(
+                "[data-tracking-code]"
+            )
+            .forEach(element => {
 
-        fallback.scrollIntoView({
+                element.textContent =
+                    order.trackingToken;
+            });
+
+        success.scrollIntoView({
             behavior: "smooth"
         });
 
@@ -1804,63 +1939,93 @@ function showOrderSuccess(order) {
 
 
     /*
-       Populate existing success section.
+       Fallback success section.
     */
 
-    const orderNumber =
-        $("successOrderNumber");
+    success =
+        document.createElement(
+            "section"
+        );
 
-    const trackingCode =
-        $("successTrackingCode");
+    success.id =
+        "orderSuccess";
 
-    if (orderNumber) {
+    success.className =
+        "section";
 
-        orderNumber.textContent =
-            order.orderNumber;
-    }
+    success.innerHTML = `
 
-    if (trackingCode) {
+        <div
+            style="
+                max-width:700px;
+                margin:auto;
+                background:#fff;
+                border:1px solid #eadfca;
+                border-radius:24px;
+                padding:35px;
+                text-align:center;
+                box-shadow:0 16px 45px rgba(69,48,14,.10);
+            "
+        >
 
-        trackingCode.textContent =
-            order.trackingToken;
-    }
+            <div
+                style="
+                    font-size:4rem;
+                    margin-bottom:10px;
+                "
+            >
+                🎉
+            </div>
 
+            <h2>
+                Order Placed!
+            </h2>
 
-    /*
-       Also support common alternate IDs.
-    */
+            <p>
+                Thank you for ordering
+                from DardomaMOGS.
+            </p>
 
-    document
-        .querySelectorAll(
-            "[data-order-number]"
-        )
-        .forEach(element => {
-            element.textContent =
-                order.orderNumber;
-        });
+            <p>
+                <strong>
+                    Order Number
+                </strong>
+                <br>
+                ${escapeHTML(
+                    order.orderNumber
+                )}
+            </p>
 
-    document
-        .querySelectorAll(
-            "[data-tracking-code]"
-        )
-        .forEach(element => {
-            element.textContent =
-                order.trackingToken;
-        });
+            <p>
+                <strong>
+                    Tracking Code
+                </strong>
+                <br>
+                ${escapeHTML(
+                    order.trackingToken
+                )}
+            </p>
 
+            <p>
+                Keep these details so
+                you can track your order.
+            </p>
 
-    success.hidden =
-        false;
+        </div>
+    `;
+
+    document.body.appendChild(
+        success
+    );
 
     success.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+        behavior: "smooth"
     });
 }
 
 
 /* =========================================================
-   TRACKING API
+   TRACK ORDER
    ========================================================= */
 
 async function trackOrder(event) {
@@ -1891,10 +2056,13 @@ async function trackOrder(event) {
             .toUpperCase() || "";
 
 
-    if (!orderNumber && !trackingCode) {
+    if (
+        !orderNumber &&
+        !trackingCode
+    ) {
 
         showToast(
-            "Enter your order number or tracking code."
+            "Enter your Order Number or Tracking Code."
         );
 
         return;
@@ -1907,14 +2075,17 @@ async function trackOrder(event) {
             false;
 
         result.innerHTML = `
+
             <div class="status-card">
+
                 <h3>
                     🔎 Looking up your order...
                 </h3>
 
                 <p>
-                    Please wait a moment.
+                    Please wait.
                 </p>
+
             </div>
         `;
     }
@@ -1926,6 +2097,7 @@ async function trackOrder(event) {
             new URLSearchParams();
 
         if (orderNumber) {
+
             params.set(
                 "orderNumber",
                 orderNumber
@@ -1933,6 +2105,7 @@ async function trackOrder(event) {
         }
 
         if (trackingCode) {
+
             params.set(
                 "trackingCode",
                 trackingCode
@@ -1957,7 +2130,7 @@ async function trackOrder(event) {
         if (!response.ok) {
 
             throw new Error(
-                `Tracking request failed: ${response.status}`
+                `Tracking server returned ${response.status}`
             );
         }
 
@@ -1967,7 +2140,7 @@ async function trackOrder(event) {
 
 
         console.log(
-            "Tracking response:",
+            "Tracking data:",
             data
         );
 
@@ -1987,6 +2160,7 @@ async function trackOrder(event) {
         if (result) {
 
             result.innerHTML = `
+
                 <div
                     class="status-card"
                     style="
@@ -1994,21 +2168,22 @@ async function trackOrder(event) {
                         border-color:#f0c9bf;
                     "
                 >
+
                     <h3>
-                        ⚠️ Could not load tracking
+                        ⚠️ Tracking unavailable
                     </h3>
 
                     <p>
-                        Please check your order
-                        number and tracking code,
-                        then try again.
+                        We couldn't connect to
+                        the tracking system.
                     </p>
 
                     <p>
-                        If the problem continues,
-                        the tracking server may
-                        need a moment to respond.
+                        Please check your
+                        Order Number and
+                        Tracking Code.
                     </p>
+
                 </div>
             `;
         }
@@ -2017,7 +2192,7 @@ async function trackOrder(event) {
 
 
 /* =========================================================
-   RENDER TRACKING RESULT
+   TRACKING RESULT
    ========================================================= */
 
 function renderTrackingResult(data) {
@@ -2030,14 +2205,7 @@ function renderTrackingResult(data) {
     }
 
 
-    /*
-       Support both:
-       {success:true,...}
-       and
-       {found:true,...}
-    */
-
-    const success =
+    const found =
         data &&
         (
             data.success === true ||
@@ -2045,9 +2213,10 @@ function renderTrackingResult(data) {
         );
 
 
-    if (!success) {
+    if (!found) {
 
         result.innerHTML = `
+
             <div
                 class="status-card"
                 style="
@@ -2057,7 +2226,7 @@ function renderTrackingResult(data) {
             >
 
                 <h3>
-                    ❌ Order not found
+                    ❌ Order Not Found
                 </h3>
 
                 <p>
@@ -2094,6 +2263,16 @@ function renderTrackingResult(data) {
         data.lastUpdated ||
         data.last_updated ||
         "";
+
+    const latitude =
+        data.latitude ??
+        data.deliveryLatitude ??
+        data.delivery_latitude;
+
+    const longitude =
+        data.longitude ??
+        data.deliveryLongitude ??
+        data.delivery_longitude;
 
 
     let html = `
@@ -2142,49 +2321,40 @@ function renderTrackingResult(data) {
 
 
     /*
-       Map ONLY when the order is
+       Map only appears when
        Out for Delivery.
     */
 
     if (
         String(status)
-            .toLowerCase() ===
+            .toLowerCase()
+            .trim() ===
         "out for delivery"
     ) {
 
-        const latitude =
-            data.latitude ??
-            data.deliveryLatitude ??
-            data.delivery_latitude;
-
-        const longitude =
-            data.longitude ??
-            data.deliveryLongitude ??
-            data.delivery_longitude;
-
-
         html += `
+
             <div
                 class="status-card"
-                style="margin-top:15px;"
+                style="margin-top:18px;"
             >
 
                 <h3>
-                    🚚 Your Order Is Out for Delivery
+                    🚚 Out for Delivery
                 </h3>
 
                 <p>
-                    Your delivery is currently
-                    on the way.
+                    Your Dardoma is on the way!
                 </p>
 
                 ${
                     latitude &&
                     longitude
                         ? `
+
                             <p>
-                                📍 Delivery location
-                                is available.
+                                📍 Delivery
+                                location available.
                             </p>
 
                             <a
@@ -2195,12 +2365,15 @@ function renderTrackingResult(data) {
                             >
                                 Open Delivery Map
                             </a>
+
                         `
                         : `
+
                             <p>
-                                📍 The delivery location
-                                has not been added yet.
+                                📍 Delivery location
+                                hasn't been added yet.
                             </p>
+
                         `
                 }
 
@@ -2237,18 +2410,14 @@ function renderTimeline(currentStatus) {
     return statuses
         .map((status, index) => {
 
-            let symbol = "○";
-
-            if (
-                currentIndex >= index
-            ) {
-                symbol = "✓";
-            }
+            const completed =
+                currentIndex >= index;
 
             const active =
                 status === currentStatus;
 
             return `
+
                 <div
                     style="
                         ${
@@ -2258,8 +2427,15 @@ function renderTimeline(currentStatus) {
                         }
                     "
                 >
-                    ${symbol}
+
+                    ${
+                        completed
+                            ? "✓"
+                            : "○"
+                    }
+
                     ${escapeHTML(status)}
+
                 </div>
             `;
 
@@ -2269,109 +2445,16 @@ function renderTimeline(currentStatus) {
 
 
 /* =========================================================
-   MOBILE MENU
-   ========================================================= */
+   CHECKOUT FORM
+   =========================================================
 
-function setupMobileMenu() {
+   THIS IS THE IMPORTANT REVIEW BUTTON FIX.
 
-    const menuButton =
-        $("menuButton");
-
-    const mobileMenu =
-        $("mobileMenu");
-
-
-    if (
-        !menuButton ||
-        !mobileMenu
-    ) {
-        return;
-    }
-
-
-    menuButton.addEventListener(
-        "click",
-        () => {
-
-            mobileMenu.classList.toggle(
-                "open"
-            );
-
-        }
-    );
-
-
-    mobileMenu
-        .querySelectorAll("a")
-        .forEach(link => {
-
-            link.addEventListener(
-                "click",
-                () => {
-
-                    mobileMenu.classList.remove(
-                        "open"
-                    );
-
-                }
-            );
-
-        });
-}
-
-
-/* =========================================================
-   SMOOTH NAVIGATION
-   ========================================================= */
-
-function setupNavigation() {
-
-    document
-        .querySelectorAll(
-            'a[href^="#"]'
-        )
-        .forEach(link => {
-
-            link.addEventListener(
-                "click",
-                event => {
-
-                    const targetId =
-                        link.getAttribute(
-                            "href"
-                        );
-
-                    if (
-                        !targetId ||
-                        targetId === "#"
-                    ) {
-                        return;
-                    }
-
-                    const target =
-                        document.querySelector(
-                            targetId
-                        );
-
-                    if (!target) {
-                        return;
-                    }
-
-                    event.preventDefault();
-
-                    target.scrollIntoView({
-                        behavior: "smooth"
-                    });
-
-                }
-            );
-
-        });
-}
-
-
-/* =========================================================
-   CHECKOUT FORM SETUP
+   It handles:
+   • form submit
+   • Review Order button
+   • buttons with data-review-order
+   • buttons inside checkout form
    ========================================================= */
 
 function setupCheckoutForm() {
@@ -2380,31 +2463,113 @@ function setupCheckoutForm() {
         $("checkoutForm");
 
     if (!form) {
+
+        console.warn(
+            "checkoutForm not found."
+        );
+
         return;
     }
 
 
     /*
-       IMPORTANT:
-       Prevent normal browser submission.
-       We handle checkout ourselves.
+       Prevent normal form submission.
     */
 
     form.addEventListener(
         "submit",
-        event => {
+        function(event) {
 
             event.preventDefault();
 
+            event.stopPropagation();
+
             reviewOrder();
 
+            return false;
         }
     );
 
 
     /*
-       Update preview when checkout
-       information changes.
+       Find the Review button.
+    */
+
+    let reviewButton =
+        $("reviewOrderButton");
+
+
+    if (!reviewButton) {
+
+        reviewButton =
+            form.querySelector(
+                '[data-review-order]'
+            );
+    }
+
+
+    if (!reviewButton) {
+
+        reviewButton =
+            form.querySelector(
+                'button[type="submit"]'
+            );
+    }
+
+
+    /*
+       If found, force it to behave
+       as a Review button.
+    */
+
+    if (reviewButton) {
+
+        reviewButton.type =
+            "button";
+
+
+        /*
+           Remove previous click handlers
+           by cloning the button.
+        */
+
+        const replacement =
+            reviewButton.cloneNode(true);
+
+        reviewButton.parentNode.replaceChild(
+            replacement,
+            reviewButton
+        );
+
+
+        replacement.type =
+            "button";
+
+
+        replacement.addEventListener(
+            "click",
+            function(event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                reviewOrder();
+
+            }
+        );
+
+    } else {
+
+        console.warn(
+            "Review Order button not found."
+        );
+    }
+
+
+    /*
+       Update checkout preview
+       whenever fields change.
     */
 
     [
@@ -2437,7 +2602,7 @@ function setupCheckoutForm() {
 
 
 /* =========================================================
-   TRACKING FORM SETUP
+   TRACKING FORM
    ========================================================= */
 
 function setupTrackingForm() {
@@ -2448,7 +2613,6 @@ function setupTrackingForm() {
     if (!form) {
         return;
     }
-
 
     form.addEventListener(
         "submit",
@@ -2472,7 +2636,12 @@ function setupCheckoutButton() {
 
     button.addEventListener(
         "click",
-        prepareCheckout
+        function(event) {
+
+            event.preventDefault();
+
+            prepareCheckout();
+        }
     );
 }
 
@@ -2492,25 +2661,120 @@ function setupClearCartButton() {
 
     button.addEventListener(
         "click",
-        clearCart
+        function(event) {
+
+            event.preventDefault();
+
+            clearCart();
+        }
     );
 }
 
 
 /* =========================================================
-   STORE STATUS CLOCK
+   MOBILE MENU
    ========================================================= */
 
-function startStoreStatusClock() {
+function setupMobileMenu() {
+
+    const menuButton =
+        $("menuButton");
+
+    const mobileMenu =
+        $("mobileMenu");
+
+    if (
+        !menuButton ||
+        !mobileMenu
+    ) {
+        return;
+    }
+
+
+    menuButton.addEventListener(
+        "click",
+        function() {
+
+            mobileMenu.classList.toggle(
+                "open"
+            );
+        }
+    );
+
+
+    mobileMenu
+        .querySelectorAll("a")
+        .forEach(link => {
+
+            link.addEventListener(
+                "click",
+                function() {
+
+                    mobileMenu.classList.remove(
+                        "open"
+                    );
+                }
+            );
+
+        });
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function setupNavigation() {
+
+    document
+        .querySelectorAll(
+            'a[href^="#"]'
+        )
+        .forEach(link => {
+
+            link.addEventListener(
+                "click",
+                function(event) {
+
+                    const targetId =
+                        link.getAttribute(
+                            "href"
+                        );
+
+                    if (
+                        !targetId ||
+                        targetId === "#"
+                    ) {
+                        return;
+                    }
+
+                    const target =
+                        document.querySelector(
+                            targetId
+                        );
+
+                    if (!target) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    target.scrollIntoView({
+                        behavior: "smooth"
+                    });
+                }
+            );
+        });
+}
+
+
+/* =========================================================
+   STORE CLOCK
+   ========================================================= */
+
+function startStoreClock() {
 
     updateStoreStatus();
-
-    /*
-       Check every 30 seconds so the
-       store automatically changes from
-       closed → open at 2 PM and
-       open → closed at 2 AM.
-    */
 
     setInterval(
         updateStoreStatus,
@@ -2520,7 +2784,7 @@ function startStoreStatusClock() {
 
 
 /* =========================================================
-   LOAD LAST ORDER
+   LAST ORDER
    ========================================================= */
 
 function loadLastOrder() {
@@ -2536,7 +2800,9 @@ function loadLastOrder() {
             return null;
         }
 
-        return JSON.parse(saved);
+        return JSON.parse(
+            saved
+        );
 
     } catch {
 
@@ -2546,15 +2812,15 @@ function loadLastOrder() {
 
 
 /* =========================================================
-   SHOW LAST ORDER BUTTON
+   LAST ORDER DISPLAY
    ========================================================= */
 
 function setupLastOrder() {
 
-    const lastOrder =
+    const order =
         loadLastOrder();
 
-    if (!lastOrder) {
+    if (!order) {
         return;
     }
 
@@ -2565,8 +2831,9 @@ function setupLastOrder() {
         .forEach(element => {
 
             element.textContent =
-                lastOrder.orderNumber;
+                order.orderNumber;
         });
+
 
     document
         .querySelectorAll(
@@ -2575,20 +2842,52 @@ function setupLastOrder() {
         .forEach(element => {
 
             element.textContent =
-                lastOrder.trackingToken;
+                order.trackingToken;
         });
 }
 
 
 /* =========================================================
-   INITIALIZE
+   GOOGLE FORM INITIALIZATION
+   ========================================================= */
+
+function setupGoogleForm() {
+
+    const form =
+        $("realGoogleForm");
+
+    if (!form) {
+
+        console.warn(
+            "realGoogleForm not found on page."
+        );
+
+        return;
+    }
+
+    form.action =
+        CONFIG.googleFormAction;
+
+    form.method =
+        "POST";
+
+    form.target =
+        "googleFormSubmitFrame";
+
+    createGoogleFormIframe();
+}
+
+
+/* =========================================================
+   INITIALIZE WEBSITE
    ========================================================= */
 
 function initializeDardomaMOGS() {
 
     console.log(
-        "🥭 DardomaMOGS loading..."
+        "🥭 DardomaMOGS initializing..."
     );
+
 
     renderProducts();
 
@@ -2598,9 +2897,6 @@ function initializeDardomaMOGS() {
 
     renderCheckoutPreview();
 
-    setupMobileMenu();
-
-    setupNavigation();
 
     setupCheckoutForm();
 
@@ -2610,42 +2906,25 @@ function initializeDardomaMOGS() {
 
     setupClearCartButton();
 
+    setupMobileMenu();
+
+    setupNavigation();
+
+    setupGoogleForm();
+
     setupLastOrder();
 
-    startStoreStatusClock();
+    startStoreClock();
 
-    /*
-       Make sure Google Form exists
-       and has the correct action.
-    */
-
-    const googleForm =
-        $("realGoogleForm");
-
-    if (googleForm) {
-
-        googleForm.action =
-            CONFIG.googleFormAction;
-
-        googleForm.method =
-            "POST";
-
-        googleForm.target =
-            "googleFormSubmitFrame";
-    }
 
     console.log(
-        "🥭 DardomaMOGS ready!"
+        "🥭 DardomaMOGS is ready!"
     );
 }
 
 
 /* =========================================================
    GLOBAL FUNCTIONS
-   =========================================================
-
-   These are required because some of the
-   HTML buttons use onclick="..."
    ========================================================= */
 
 window.addToCart =
@@ -2675,9 +2954,6 @@ window.confirmOrder =
 window.trackOrder =
     trackOrder;
 
-window.renderTrackingResult =
-    renderTrackingResult;
-
 
 /* =========================================================
    START
@@ -2696,5 +2972,4 @@ if (
 } else {
 
     initializeDardomaMOGS();
-
 }
