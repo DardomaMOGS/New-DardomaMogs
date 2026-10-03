@@ -1,25 +1,19 @@
 "use strict";
 
 /* =========================================================
-   DARDOMAMOGS — COMPLETE CORRECTED SCRIPT.JS
-   =========================================================
-   Products:
-   • Mango Dardoma
-   • Karkade Dardoma
-   • Pepsi Dardoma
-
-   Features:
+   DARDOMAMOGS — COMPLETE SCRIPT.JS
+   ---------------------------------------------------------
    • Shopping cart
    • Product rendering
    • Store hours: 2 PM → 2 AM
    • Checkout
-   • Review order
+   • Review Order
+   • Confirm Order
    • Google Forms submission
    • Google Sheets / Apps Script tracking
    • Order number + tracking code
    • Local order backup
    • Delivery status
-   • Delivery map
    • Mobile menu
    • No Firebase
    ========================================================= */
@@ -30,7 +24,6 @@
    ========================================================= */
 
 const CONFIG = {
-
     storeName: "DardomaMOGS",
 
     openingHour: 14,
@@ -38,14 +31,9 @@ const CONFIG = {
 
     deliveryFee: 20,
 
-    cartStorageKey:
-        "dardoma_mogs_cart",
-
-    ordersStorageKey:
-        "dardoma_mogs_orders",
-
-    lastOrderKey:
-        "dardoma_mogs_last_order",
+    cartStorageKey: "dardoma_mogs_cart",
+    ordersStorageKey: "dardoma_mogs_orders",
+    lastOrderKey: "dardoma_mogs_last_order",
 
     googleFormAction:
         "https://docs.google.com/forms/d/e/1FAIpQLSfcFu09aQGcBszMQvutwk_huj8BK4CqtSwdU8HerbVei-lftw/formResponse",
@@ -54,21 +42,11 @@ const CONFIG = {
         "https://script.google.com/macros/s/AKfycby9GyMIelR3lAnmaAaJlPBWMKw8v_SdIDuc6ZT_useCESQCM-TyPvXVYPG-JTOkB5WAVg/exec",
 
     googleFormEntries: {
-
-        name:
-            "entry.1661561910",
-
-        contact:
-            "entry.544821231",
-
-        order:
-            "entry.1211593112",
-
-        notes:
-            "entry.212349483",
-
-        payment:
-            "entry.412155072"
+        name: "entry.1661561910",
+        contact: "entry.544821231",
+        order: "entry.1211593112",
+        notes: "entry.212349483",
+        payment: "entry.412155072"
     }
 };
 
@@ -78,49 +56,28 @@ const CONFIG = {
    ========================================================= */
 
 const PRODUCTS = {
-
     mango: {
-
         id: "mango",
-
         name: "Mango Dardoma",
-
         emoji: "🥭",
-
         price: 10,
-
-        description:
-            "Sweet mango flavor."
+        description: "Sweet mango flavor."
     },
-
 
     karkade: {
-
         id: "karkade",
-
         name: "Karkade Dardoma",
-
         emoji: "❤️",
-
         price: 10,
-
-        description:
-            "Refreshing karkade flavor."
+        description: "Refreshing karkade flavor."
     },
 
-
     pepsi: {
-
         id: "pepsi",
-
         name: "Pepsi Dardoma",
-
         emoji: "🥤",
-
         price: 10,
-
-        description:
-            "Cool Pepsi flavor."
+        description: "Cool Pepsi flavor."
     }
 };
 
@@ -130,40 +87,30 @@ const PRODUCTS = {
    ========================================================= */
 
 let cart = loadCart();
-
 let currentOrder = null;
-
 let isSubmittingOrder = false;
 
 
 /* =========================================================
-   BASIC HELPERS
+   HELPER
    ========================================================= */
 
 function $(id) {
-
     return document.getElementById(id);
 }
 
 
 function money(value) {
-
     return `${Number(value || 0).toFixed(2)} EGP`;
 }
 
 
 function escapeHTML(value) {
-
     return String(value ?? "")
-
         .replace(/&/g, "&amp;")
-
         .replace(/</g, "&lt;")
-
         .replace(/>/g, "&gt;")
-
         .replace(/"/g, "&quot;")
-
         .replace(/'/g, "&#039;");
 }
 
@@ -174,46 +121,36 @@ function showToast(message) {
 
     if (!toast) {
 
-        toast =
-            document.createElement("div");
+        toast = document.createElement("div");
 
         toast.id = "toast";
 
-        Object.assign(
-            toast.style,
-            {
-                position: "fixed",
-                left: "50%",
-                bottom: "25px",
-                transform: "translateX(-50%)",
-                zIndex: "99999",
-                padding: "13px 20px",
-                borderRadius: "14px",
-                background: "#172018",
-                color: "#fff",
-                fontWeight: "800",
-                boxShadow:
-                    "0 12px 35px rgba(0,0,0,.25)",
-                maxWidth: "90%",
-                textAlign: "center"
-            }
-        );
+        toast.style.position = "fixed";
+        toast.style.left = "50%";
+        toast.style.bottom = "25px";
+        toast.style.transform = "translateX(-50%)";
+        toast.style.zIndex = "99999";
+        toast.style.padding = "13px 20px";
+        toast.style.borderRadius = "14px";
+        toast.style.background = "#172018";
+        toast.style.color = "#fff";
+        toast.style.fontWeight = "800";
+        toast.style.boxShadow =
+            "0 12px 35px rgba(0,0,0,.25)";
+        toast.style.maxWidth = "90%";
+        toast.style.textAlign = "center";
 
         document.body.appendChild(toast);
     }
 
     toast.textContent = message;
-
     toast.hidden = false;
 
     clearTimeout(showToast.timer);
 
-    showToast.timer =
-        setTimeout(() => {
-
-            toast.hidden = true;
-
-        }, 3000);
+    showToast.timer = setTimeout(() => {
+        toast.hidden = true;
+    }, 3000);
 }
 
 
@@ -225,12 +162,6 @@ function isStoreOpen() {
 
     const hour =
         new Date().getHours();
-
-    /*
-       Store is open:
-       2 PM → midnight
-       midnight → 2 AM
-    */
 
     return (
         hour >= CONFIG.openingHour ||
@@ -261,14 +192,11 @@ function updateStoreStatus() {
                     : "🔴 We're Closed";
         });
 
-
     const closedNotice =
         $("closedNotice");
 
     if (closedNotice) {
-
-        closedNotice.hidden =
-            open;
+        closedNotice.hidden = open;
     }
 }
 
@@ -287,7 +215,6 @@ function loadCart() {
             );
 
         if (!saved) {
-
             return {};
         }
 
@@ -298,7 +225,6 @@ function loadCart() {
             !parsed ||
             typeof parsed !== "object"
         ) {
-
             return {};
         }
 
@@ -342,27 +268,15 @@ function saveCart() {
 function getCartItems() {
 
     return Object.values(cart)
-
         .filter(item =>
-
             item &&
-
             PRODUCTS[item.id] &&
-
             Number(item.quantity) > 0
-
         )
-
         .map(item => ({
-
-            id:
-                item.id,
-
-            quantity:
-                Number(item.quantity),
-
-            product:
-                PRODUCTS[item.id]
+            id: item.id,
+            quantity: Number(item.quantity),
+            product: PRODUCTS[item.id]
         }));
 }
 
@@ -370,10 +284,8 @@ function getCartItems() {
 function getCartCount() {
 
     return getCartItems().reduce(
-
         (total, item) =>
             total + item.quantity,
-
         0
     );
 }
@@ -382,13 +294,10 @@ function getCartCount() {
 function getSubtotal() {
 
     return getCartItems().reduce(
-
         (total, item) =>
-
             total +
             item.product.price *
             item.quantity,
-
         0
     );
 }
@@ -424,15 +333,8 @@ function addToCart(
         PRODUCTS[productId];
 
     if (!product) {
-
-        console.error(
-            "Unknown product:",
-            productId
-        );
-
         return;
     }
-
 
     if (!isStoreOpen()) {
 
@@ -443,37 +345,26 @@ function addToCart(
         return;
     }
 
-
     quantity =
         Math.max(
             1,
             parseInt(quantity, 10) || 1
         );
 
-
     if (!cart[productId]) {
 
         cart[productId] = {
-
-            id:
-                productId,
-
-            quantity:
-                0
+            id: productId,
+            quantity: 0
         };
     }
 
-
-    cart[productId].quantity +=
-        quantity;
-
+    cart[productId].quantity += quantity;
 
     saveCart();
 
     renderCart();
-
     updateCartCount();
-
 
     showToast(
         `${product.name} added to cart! 🥭`
@@ -491,63 +382,45 @@ function changeQuantity(
 ) {
 
     if (!cart[productId]) {
-
         return;
     }
 
-
     cart[productId].quantity =
-
-        Number(
-            cart[productId].quantity
-        ) +
-
+        Number(cart[productId].quantity) +
         Number(amount);
-
 
     if (
         cart[productId].quantity <= 0
     ) {
-
         delete cart[productId];
     }
-
 
     saveCart();
 
     renderCart();
-
     updateCartCount();
 }
 
 
 /* =========================================================
-   REMOVE FROM CART
+   REMOVE ITEM
    ========================================================= */
 
-function removeFromCart(
-    productId
-) {
+function removeFromCart(productId) {
 
     if (!cart[productId]) {
-
         return;
     }
-
 
     const product =
         PRODUCTS[productId];
 
-
     delete cart[productId];
-
 
     saveCart();
 
     renderCart();
-
     updateCartCount();
-
 
     if (product) {
 
@@ -565,19 +438,15 @@ function removeFromCart(
 function clearCart() {
 
     if (!getCartItems().length) {
-
         return;
     }
-
 
     cart = {};
 
     saveCart();
 
     renderCart();
-
     updateCartCount();
-
 
     showToast(
         "Cart cleared."
@@ -594,7 +463,6 @@ function updateCartCount() {
     const count =
         getCartCount();
 
-
     document
         .querySelectorAll(
             ".cart-count, #cartCount, .nav-cart-count"
@@ -605,10 +473,8 @@ function updateCartCount() {
                 count;
 
             if (
-                element.tagName ===
-                "SPAN"
+                element.tagName === "SPAN"
             ) {
-
                 element.hidden =
                     count === 0;
             }
@@ -617,7 +483,7 @@ function updateCartCount() {
 
 
 /* =========================================================
-   PRODUCT RENDERING
+   PRODUCTS
    ========================================================= */
 
 function renderProducts() {
@@ -626,15 +492,11 @@ function renderProducts() {
         $("productGrid");
 
     if (!grid) {
-
         return;
     }
 
-
     grid.innerHTML =
-
         Object.values(PRODUCTS)
-
             .map(product => `
 
                 <article class="product-card">
@@ -644,7 +506,6 @@ function renderProducts() {
                     </div>
 
                     <div>
-
                         <h3>
                             ${escapeHTML(
                                 product.name
@@ -656,7 +517,6 @@ function renderProducts() {
                                 product.description
                             )}
                         </p>
-
                     </div>
 
                     <div class="price-row">
@@ -680,13 +540,12 @@ function renderProducts() {
                 </article>
 
             `)
-
             .join("");
 }
 
 
 /* =========================================================
-   CART RENDERING
+   CART RENDER
    ========================================================= */
 
 function renderCart() {
@@ -695,14 +554,11 @@ function renderCart() {
         $("cartItems");
 
     if (!container) {
-
         return;
     }
 
-
     const items =
         getCartItems();
-
 
     if (!items.length) {
 
@@ -736,99 +592,88 @@ function renderCart() {
     } else {
 
         container.innerHTML =
+            items.map(item => {
 
-            items
+                const product =
+                    item.product;
 
-                .map(item => {
+                const itemTotal =
+                    product.price *
+                    item.quantity;
 
-                    const product =
-                        item.product;
+                return `
 
-                    const itemTotal =
-                        product.price *
-                        item.quantity;
+                    <div class="cart-row">
 
+                        <div class="cart-thumb">
+                            ${product.emoji}
+                        </div>
 
-                    return `
+                        <div class="cart-info">
 
-                        <div class="cart-row">
+                            <h4>
+                                ${escapeHTML(
+                                    product.name
+                                )}
+                            </h4>
 
-                            <div class="cart-thumb">
-                                ${product.emoji}
-                            </div>
+                            <p>
+                                ${money(
+                                    product.price
+                                )} each
+                            </p>
 
-                            <div class="cart-info">
-
-                                <h4>
-                                    ${escapeHTML(
-                                        product.name
-                                    )}
-                                </h4>
-
-                                <p>
-                                    ${money(
-                                        product.price
-                                    )} each
-                                </p>
-
-                                <div class="qty">
-
-                                    <button
-                                        type="button"
-                                        onclick="changeQuantity('${product.id}', -1)"
-                                    >
-                                        −
-                                    </button>
-
-                                    <strong>
-                                        ${item.quantity}
-                                    </strong>
-
-                                    <button
-                                        type="button"
-                                        onclick="changeQuantity('${product.id}', 1)"
-                                    >
-                                        +
-                                    </button>
-
-                                </div>
+                            <div class="qty">
 
                                 <button
                                     type="button"
-                                    class="remove"
-                                    onclick="removeFromCart('${product.id}')"
+                                    onclick="changeQuantity('${product.id}', -1)"
                                 >
-                                    Remove
+                                    −
+                                </button>
+
+                                <strong>
+                                    ${item.quantity}
+                                </strong>
+
+                                <button
+                                    type="button"
+                                    onclick="changeQuantity('${product.id}', 1)"
+                                >
+                                    +
                                 </button>
 
                             </div>
 
-                            <div>
-
-                                <strong>
-                                    ${money(
-                                        itemTotal
-                                    )}
-                                </strong>
-
-                            </div>
+                            <button
+                                type="button"
+                                class="remove"
+                                onclick="removeFromCart('${product.id}')"
+                            >
+                                Remove
+                            </button>
 
                         </div>
 
-                    `;
+                        <div>
+                            <strong>
+                                ${money(itemTotal)}
+                            </strong>
+                        </div>
 
-                })
+                    </div>
 
-                .join("");
+                `;
+
+            }).join("");
     }
-
 
     renderSummary();
 }
 
 
 /* =========================================================
-   CART SUMMARY
+   SUMMARY
    ========================================================= */
 
 function renderSummary() {
@@ -842,37 +687,23 @@ function renderSummary() {
     const total =
         $("cartTotal");
 
-
     if (subtotal) {
-
         subtotal.textContent =
-            money(
-                getSubtotal()
-            );
+            money(getSubtotal());
     }
-
 
     if (delivery) {
-
         delivery.textContent =
-            money(
-                getDeliveryFee()
-            );
+            money(getDeliveryFee());
     }
-
 
     if (total) {
-
         total.textContent =
-            money(
-                getTotal()
-            );
+            money(getTotal());
     }
-
 
     const checkoutButton =
         $("checkoutButton");
-
 
     if (checkoutButton) {
 
@@ -897,7 +728,6 @@ function prepareCheckout() {
         return;
     }
 
-
     if (!getCartItems().length) {
 
         showToast(
@@ -907,13 +737,10 @@ function prepareCheckout() {
         return;
     }
 
-
     renderCheckoutPreview();
-
 
     const checkout =
         $("checkout");
-
 
     if (checkout) {
 
@@ -934,21 +761,16 @@ function renderCheckoutPreview() {
         $("checkoutPreview");
 
     if (!preview) {
-
         return;
     }
 
-
     const lines =
         getCartItems().map(item =>
-
             `${item.quantity} × ${item.product.name} — ${money(
                 item.product.price *
                 item.quantity
             )}`
-
         );
-
 
     lines.push("");
 
@@ -970,49 +792,48 @@ function renderCheckoutPreview() {
         )}`
     );
 
-
     preview.textContent =
         lines.join("\n");
 }
 
 
 /* =========================================================
-   ORDER NUMBER
+   CREATE ORDER NUMBER
    ========================================================= */
 
 function generateOrderNumber() {
 
-    let orderNumber;
+    let number;
+    let exists = true;
 
-    let attempts = 0;
+    while (exists) {
 
-
-    do {
-
-        const number =
+        number =
             Math.floor(
                 1000 +
                 Math.random() * 9000
             );
 
-        orderNumber =
+        const orderNumber =
             `DM-${number}`;
 
-        attempts++;
+        exists =
+            orderExists(
+                orderNumber
+            );
 
-    } while (
-        orderExists(orderNumber) &&
-        attempts < 100
-    );
-
-
-    return orderNumber;
+        if (!exists) {
+            return orderNumber;
+        }
+    }
 }
 
 
-function orderExists(
-    orderNumber
-) {
+/* =========================================================
+   CHECK EXISTING ORDER
+   ========================================================= */
+
+function orderExists(orderNumber) {
 
     try {
 
@@ -1023,20 +844,15 @@ function orderExists(
                 ) || "[]"
             );
 
-
-        if (
-            !Array.isArray(orders)
-        ) {
-
+        if (!Array.isArray(orders)) {
             return false;
         }
-
 
         return orders.some(
             order =>
                 order &&
                 order.orderNumber ===
-                orderNumber
+                    orderNumber
         );
 
     } catch {
@@ -1055,15 +871,9 @@ function generateTrackingToken() {
     const characters =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-
     let code = "";
 
-
-    for (
-        let i = 0;
-        i < 10;
-        i++
-    ) {
+    for (let i = 0; i < 10; i++) {
 
         code +=
             characters[
@@ -1074,13 +884,12 @@ function generateTrackingToken() {
             ];
     }
 
-
     return code;
 }
 
 
 /* =========================================================
-   CREATE ORDER
+   CREATE ORDER OBJECT
    ========================================================= */
 
 function createOrder() {
@@ -1088,29 +897,24 @@ function createOrder() {
     const items =
         getCartItems();
 
-
     const name =
         $("customerName")
             ?.value
             .trim() || "";
-
 
     const contact =
         $("customerContact")
             ?.value
             .trim() || "";
 
-
     const payment =
         $("paymentMethod")
             ?.value || "";
-
 
     const notes =
         $("customerNotes")
             ?.value
             .trim() || "";
-
 
     return {
 
@@ -1129,9 +933,7 @@ function createOrder() {
         notes,
 
         items:
-
             items.map(item => ({
-
                 id:
                     item.product.id,
 
@@ -1143,7 +945,6 @@ function createOrder() {
 
                 price:
                     item.product.price
-
             })),
 
         subtotal:
@@ -1168,12 +969,9 @@ function createOrder() {
    SAVE ORDER LOCALLY
    ========================================================= */
 
-function saveOrderLocally(
-    order
-) {
+function saveOrderLocally(order) {
 
     let orders = [];
-
 
     try {
 
@@ -1184,11 +982,7 @@ function saveOrderLocally(
                 ) || "[]"
             );
 
-
-        if (
-            !Array.isArray(orders)
-        ) {
-
+        if (!Array.isArray(orders)) {
             orders = [];
         }
 
@@ -1197,9 +991,7 @@ function saveOrderLocally(
         orders = [];
     }
 
-
     orders.push(order);
-
 
     try {
 
@@ -1207,7 +999,6 @@ function saveOrderLocally(
             CONFIG.ordersStorageKey,
             JSON.stringify(orders)
         );
-
 
         localStorage.setItem(
             CONFIG.lastOrderKey,
@@ -1228,103 +1019,92 @@ function saveOrderLocally(
    GOOGLE FORM ORDER TEXT
    ========================================================= */
 
-function formatGoogleFormOrder(
-    order
-) {
+function formatGoogleFormOrder(order) {
 
     const itemLines =
-
         order.items
-
             .map(item =>
-
                 `${item.quantity} × ${item.name} — ${money(
                     item.price *
                     item.quantity
                 )}`
-
             )
-
             .join("\n");
 
-
     return [
-
         `Order Number: ${order.orderNumber}`,
-
         `Tracking Code: ${order.trackingToken}`,
-
         "",
-
         itemLines,
-
         "",
-
         `Subtotal: ${money(
             order.subtotal
         )}`,
-
         `Delivery: ${money(
             order.deliveryFee
         )}`,
-
         `Total: ${money(
             order.total
         )}`
-
     ].join("\n");
 }
 
 
 /* =========================================================
-   GOOGLE FORM / IFRAME
+   CREATE HIDDEN GOOGLE FORM IFRAME
    ========================================================= */
 
 function createGoogleFormIframe() {
 
-    /*
-       Your current HTML uses:
-       googleFormTarget
-    */
-
     let iframe =
-        $("googleFormTarget");
+        $("googleFormSubmitFrame");
 
-
-    if (!iframe) {
-
-        iframe =
-            document.createElement(
-                "iframe"
-            );
-
-        iframe.id =
-            "googleFormTarget";
-
-        iframe.name =
-            "googleFormTarget";
-
-        iframe.className =
-            "hidden-frame";
-
-        iframe.title =
-            "Order submission";
-
-        iframe.style.display =
-            "none";
-
-        document.body.appendChild(
-            iframe
-        );
+    if (iframe) {
+        return iframe;
     }
 
+    iframe =
+        document.createElement("iframe");
+
+    iframe.id =
+        "googleFormSubmitFrame";
+
+    iframe.name =
+        "googleFormSubmitFrame";
+
+    iframe.style.position =
+        "fixed";
+
+    iframe.style.width =
+        "1px";
+
+    iframe.style.height =
+        "1px";
+
+    iframe.style.border =
+        "0";
+
+    iframe.style.opacity =
+        "0";
+
+    iframe.style.pointerEvents =
+        "none";
+
+    iframe.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    document.body.appendChild(
+        iframe
+    );
 
     return iframe;
 }
 
 
 /* =========================================================
-   GOOGLE FORM INPUT
+   ENSURE FORM INPUT
    ========================================================= */
 
 function ensureGoogleInput(
@@ -1337,18 +1117,13 @@ function ensureGoogleInput(
     let input =
         $(id);
 
-
-    if (
-        !input ||
-        input.form !== form
-    ) {
+    if (!input) {
 
         input =
             form.querySelector(
                 `[name="${name}"]`
             );
     }
-
 
     if (!input) {
 
@@ -1368,7 +1143,6 @@ function ensureGoogleInput(
         );
     }
 
-
     input.name =
         name;
 
@@ -1381,62 +1155,39 @@ function ensureGoogleInput(
    SUBMIT GOOGLE FORM
    ========================================================= */
 
-function submitGoogleForm(
-    order
-) {
-
-    /*
-       IMPORTANT:
-       Current website HTML uses:
-
-       id="googleOrderForm"
-
-       NOT:
-       realGoogleForm
-    */
+function submitGoogleForm(order) {
 
     const form =
-        $("googleOrderForm");
-
+        $("realGoogleForm");
 
     if (!form) {
 
         console.error(
-            "googleOrderForm does not exist."
+            "realGoogleForm does not exist."
         );
 
         showToast(
-            "The Google order form is missing."
+            "The order form is missing."
         );
 
         return false;
     }
 
-
     const entries =
         CONFIG.googleFormEntries;
-
 
     const orderText =
         formatGoogleFormOrder(
             order
         );
 
-
     const notesText =
-
         [
-
             `Order Number: ${order.orderNumber}`,
-
             `Tracking Code: ${order.trackingToken}`,
-
             order.notes
-
         ]
-
             .filter(Boolean)
-
             .join("\n");
 
 
@@ -1447,14 +1198,12 @@ function submitGoogleForm(
         order.name
     );
 
-
     ensureGoogleInput(
         form,
         "gContact",
         entries.contact,
         order.contact
     );
-
 
     ensureGoogleInput(
         form,
@@ -1463,14 +1212,12 @@ function submitGoogleForm(
         orderText
     );
 
-
     ensureGoogleInput(
         form,
         "gNotes",
         entries.notes,
         notesText
     );
-
 
     ensureGoogleInput(
         form,
@@ -1487,7 +1234,7 @@ function submitGoogleForm(
         "POST";
 
     form.target =
-        "googleFormTarget";
+        "googleFormSubmitFrame";
 
 
     createGoogleFormIframe();
@@ -1521,11 +1268,9 @@ function submitGoogleForm(
             .submit
             .call(form);
 
-
         console.log(
             "Google Form POST sent."
         );
-
 
         return true;
 
@@ -1535,7 +1280,6 @@ function submitGoogleForm(
             "Google Form POST failed:",
             error
         );
-
 
         return false;
     }
@@ -1547,6 +1291,11 @@ function submitGoogleForm(
    ========================================================= */
 
 function reviewOrder() {
+
+    console.log(
+        "Review Order clicked."
+    );
+
 
     if (!isStoreOpen()) {
 
@@ -1571,8 +1320,11 @@ function reviewOrder() {
     const form =
         $("checkoutForm");
 
-
     if (!form) {
+
+        console.error(
+            "checkoutForm was not found."
+        );
 
         showToast(
             "Checkout form could not be found."
@@ -1595,17 +1347,14 @@ function reviewOrder() {
             ?.value
             .trim() || "";
 
-
     const contact =
         $("customerContact")
             ?.value
             .trim() || "";
 
-
     const payment =
         $("paymentMethod")
             ?.value || "";
-
 
     const notes =
         $("customerNotes")
@@ -1630,14 +1379,10 @@ function reviewOrder() {
         review.className =
             "checkout-review";
 
-
-        if (form.parentNode) {
-
-            form.parentNode.insertBefore(
-                review,
-                form.nextSibling
-            );
-        }
+        form.parentNode.insertBefore(
+            review,
+            form.nextSibling
+        );
     }
 
 
@@ -1691,53 +1436,41 @@ function reviewOrder() {
 
             </div>
 
-
             <div class="review-items">
 
-                ${
+                ${items
+                    .map(item => `
 
-                    items
+                        <div
+                            style="
+                                display:flex;
+                                justify-content:space-between;
+                                gap:15px;
+                                padding:7px 0;
+                            "
+                        >
 
-                        .map(item => `
+                            <span>
+                                ${item.quantity}
+                                ×
+                                ${escapeHTML(
+                                    item.product.name
+                                )}
+                            </span>
 
-                            <div
-                                style="
-                                    display:flex;
-                                    justify-content:space-between;
-                                    gap:15px;
-                                    padding:7px 0;
-                                "
-                            >
+                            <strong>
+                                ${money(
+                                    item.product.price *
+                                    item.quantity
+                                )}
+                            </strong>
 
-                                <span>
+                        </div>
 
-                                    ${item.quantity}
-                                    ×
-                                    ${escapeHTML(
-                                        item.product.name
-                                    )}
-
-                                </span>
-
-                                <strong>
-
-                                    ${money(
-                                        item.product.price *
-                                        item.quantity
-                                    )}
-
-                                </strong>
-
-                            </div>
-
-                        `)
-
-                        .join("")
-
-                }
+                    `)
+                    .join("")}
 
             </div>
-
 
             <div
                 class="review-total"
@@ -1755,13 +1488,10 @@ function reviewOrder() {
                 </strong>
 
                 <strong>
-                    ${money(
-                        getTotal()
-                    )}
+                    ${money(getTotal())}
                 </strong>
 
             </div>
-
 
             <div
                 class="review-actions"
@@ -1798,14 +1528,12 @@ function reviewOrder() {
     review.hidden =
         false;
 
-
     review.style.display =
         "";
 
 
     const editButton =
         $("editOrderButton");
-
 
     if (editButton) {
 
@@ -1822,7 +1550,6 @@ function reviewOrder() {
     const confirmButton =
         $("finalConfirmOrderButton");
 
-
     if (confirmButton) {
 
         confirmButton.onclick =
@@ -1836,12 +1563,8 @@ function reviewOrder() {
 
 
     review.scrollIntoView({
-
-        behavior:
-            "smooth",
-
-        block:
-            "center"
+        behavior: "smooth",
+        block: "center"
     });
 
 
@@ -1858,16 +1581,12 @@ function cancelReview() {
     const review =
         $("orderReview");
 
-
     if (!review) {
-
         return;
     }
 
-
     review.hidden =
         true;
-
 
     review.style.display =
         "none";
@@ -1880,7 +1599,16 @@ function cancelReview() {
 
 async function confirmOrder() {
 
+    console.log(
+        "Confirm Order clicked."
+    );
+
+
     if (isSubmittingOrder) {
+
+        console.log(
+            "Order already being submitted."
+        );
 
         return;
     }
@@ -1909,7 +1637,6 @@ async function confirmOrder() {
     const form =
         $("checkoutForm");
 
-
     if (!form) {
 
         showToast(
@@ -1918,7 +1645,6 @@ async function confirmOrder() {
 
         return;
     }
-
 
     if (!form.checkValidity()) {
 
@@ -1931,10 +1657,8 @@ async function confirmOrder() {
     isSubmittingOrder =
         true;
 
-
     const button =
         $("finalConfirmOrderButton");
-
 
     if (button) {
 
@@ -1948,36 +1672,22 @@ async function confirmOrder() {
 
     try {
 
-        /*
-           Create the order.
-        */
-
         const order =
             createOrder();
-
 
         currentOrder =
             order;
 
-
-        /*
-           Save backup locally.
-        */
 
         saveOrderLocally(
             order
         );
 
 
-        /*
-           Submit Google Form.
-        */
-
         const sent =
             submitGoogleForm(
                 order
             );
-
 
         if (!sent) {
 
@@ -1986,10 +1696,6 @@ async function confirmOrder() {
             );
         }
 
-
-        /*
-           Clear cart.
-        */
 
         cart = {};
 
@@ -2000,27 +1706,21 @@ async function confirmOrder() {
         updateCartCount();
 
 
-        /*
-           Hide review.
-        */
-
         cancelReview();
 
-
-        /*
-           Show success.
-        */
 
         showOrderSuccess(
             order
         );
 
 
-        /*
-           Reset checkout form.
-        */
-
         form.reset();
+
+
+        console.log(
+            "DardomaMOGS order successfully sent:",
+            order
+        );
 
 
     } catch (error) {
@@ -2030,7 +1730,6 @@ async function confirmOrder() {
             error
         );
 
-
         showToast(
             "Something went wrong. Please try again."
         );
@@ -2039,7 +1738,6 @@ async function confirmOrder() {
 
         isSubmittingOrder =
             false;
-
 
         if (button) {
 
@@ -2054,12 +1752,10 @@ async function confirmOrder() {
 
 
 /* =========================================================
-   ORDER SUCCESS
+   SUCCESS
    ========================================================= */
 
-function showOrderSuccess(
-    order
-) {
+function showOrderSuccess(order) {
 
     let success =
         $("orderSuccess");
@@ -2070,28 +1766,21 @@ function showOrderSuccess(
         success.hidden =
             false;
 
-
         const number =
             $("successOrderNumber");
-
 
         const tracking =
             $("successTrackingCode");
 
-
         if (number) {
-
             number.textContent =
                 order.orderNumber;
         }
 
-
         if (tracking) {
-
             tracking.textContent =
                 order.trackingToken;
         }
-
 
         document
             .querySelectorAll(
@@ -2103,7 +1792,6 @@ function showOrderSuccess(
                     order.orderNumber;
             });
 
-
         document
             .querySelectorAll(
                 "[data-tracking-code]"
@@ -2114,36 +1802,24 @@ function showOrderSuccess(
                     order.trackingToken;
             });
 
-
         success.scrollIntoView({
-
-            behavior:
-                "smooth"
+            behavior: "smooth"
         });
-
 
         return;
     }
 
-
-    /*
-       Fallback if the HTML doesn't
-       already contain orderSuccess.
-    */
 
     success =
         document.createElement(
             "section"
         );
 
-
     success.id =
         "orderSuccess";
 
-
     success.className =
         "section";
-
 
     success.innerHTML = `
 
@@ -2179,31 +1855,23 @@ function showOrderSuccess(
             </p>
 
             <p>
-
                 <strong>
                     Order Number
                 </strong>
-
                 <br>
-
                 ${escapeHTML(
                     order.orderNumber
                 )}
-
             </p>
 
             <p>
-
                 <strong>
                     Tracking Code
                 </strong>
-
                 <br>
-
                 ${escapeHTML(
                     order.trackingToken
                 )}
-
             </p>
 
             <p>
@@ -2214,16 +1882,12 @@ function showOrderSuccess(
         </div>
     `;
 
-
     document.body.appendChild(
         success
     );
 
-
     success.scrollIntoView({
-
-        behavior:
-            "smooth"
+        behavior: "smooth"
     });
 }
 
@@ -2232,38 +1896,28 @@ function showOrderSuccess(
    TRACK ORDER
    ========================================================= */
 
-async function trackOrder(
-    event
-) {
+async function trackOrder(event) {
 
     if (event) {
-
         event.preventDefault();
     }
-
 
     const orderInput =
         $("trackingOrderNumber");
 
-
     const trackingInput =
         $("trackingCode");
-
 
     const result =
         $("trackingResult");
 
-
     const orderNumber =
-        orderInput
-            ?.value
+        orderInput?.value
             .trim()
             .toUpperCase() || "";
 
-
     const trackingCode =
-        trackingInput
-            ?.value
+        trackingInput?.value
             .trim()
             .toUpperCase() || "";
 
@@ -2286,7 +1940,6 @@ async function trackOrder(
         result.hidden =
             false;
 
-
         result.innerHTML = `
 
             <div class="status-card">
@@ -2307,54 +1960,76 @@ async function trackOrder(
     try {
 
         const params =
-            new URLSearchParams();
-
-
-        params.set(
-            "orderNumber",
-            orderNumber
-        );
-
-
-        params.set(
-            "trackingCode",
-            trackingCode
-        );
+            new URLSearchParams({
+                orderNumber,
+                trackingCode,
+                _: String(Date.now())
+            });
 
 
         const url =
             `${CONFIG.trackingApi}?${params.toString()}`;
 
 
+        console.log(
+            "DardomaMOGS tracking request:",
+            url
+        );
+
+
         const response =
             await fetch(
-
                 url,
-
                 {
-                    method:
-                        "GET",
-
-                    cache:
-                        "no-store"
+                    method: "GET",
+                    cache: "no-store",
+                    redirect: "follow"
                 }
             );
+
+
+        const responseText =
+            await response.text();
+
+
+        console.log(
+            "Tracking HTTP status:",
+            response.status
+        );
+
+        console.log(
+            "Tracking raw response:",
+            responseText
+        );
 
 
         if (!response.ok) {
 
             throw new Error(
-                `Tracking server returned ${response.status}`
+                `Tracking server returned ${response.status}.`
             );
         }
 
 
-        const data =
-            await response.json();
+        let data;
+
+        try {
+
+            data =
+                JSON.parse(
+                    responseText
+                );
+
+        } catch (parseError) {
+
+            throw new Error(
+                "The tracking server did not return valid JSON."
+            );
+        }
 
 
         console.log(
-            "Tracking API response:",
+            "Tracking parsed response:",
             data
         );
 
@@ -2374,6 +2049,9 @@ async function trackOrder(
 
         if (result) {
 
+            result.hidden =
+                false;
+
             result.innerHTML = `
 
                 <div
@@ -2385,12 +2063,18 @@ async function trackOrder(
                 >
 
                     <h3>
-                        ⚠️ Tracking unavailable
+                        ⚠️ Tracking System Error
                     </h3>
 
                     <p>
-                        We couldn't connect to
-                        the tracking system.
+                        ${escapeHTML(
+                            error.message ||
+                            "Could not connect to the tracking system."
+                        )}
+                    </p>
+
+                    <p>
+                        Please try again in a moment.
                     </p>
 
                 </div>
@@ -2404,44 +2088,32 @@ async function trackOrder(
    TRACKING RESULT
    ========================================================= */
 
-function renderTrackingResult(
-    data
-) {
+function renderTrackingResult(data) {
 
     const result =
         $("trackingResult");
 
-
     if (!result) {
-
         return;
     }
 
 
-    /*
-       FIXED RESPONSE FORMAT:
+    const order =
+        data?.order ||
+        (
+            data?.found === true
+                ? data
+                : null
+        );
 
-       Apps Script now returns:
-
-       {
-           success: true,
-           found: true,
-           order: {
-               orderNumber,
-               trackingCode,
-               status,
-               lastUpdated,
-               latitude,
-               longitude
-           }
-       }
-    */
 
     if (
-        !data ||
-        data.success !== true ||
-        !data.order
+        data?.success !== true ||
+        !order
     ) {
+
+        result.hidden =
+            false;
 
         result.innerHTML = `
 
@@ -2458,7 +2130,10 @@ function renderTrackingResult(
                 </h3>
 
                 <p>
-                    We couldn't find that order.
+                    ${escapeHTML(
+                        data?.error ||
+                        "We couldn't find that order."
+                    )}
                 </p>
 
                 <p>
@@ -2473,55 +2148,34 @@ function renderTrackingResult(
     }
 
 
-    const order =
-        data.order;
-
-
     const orderNumber =
-        order.orderNumber || "";
-
+        order.orderNumber ||
+        order.order_number ||
+        "";
 
     const trackingCode =
-        order.trackingCode || "";
-
+        order.trackingCode ||
+        order.tracking_code ||
+        "";
 
     const status =
         order.status ||
         "Order Received";
 
-
     const updated =
         order.lastUpdated ||
+        order.last_updated ||
         "";
-
 
     const latitude =
-        order.latitude;
-
+        order.latitude ??
+        order.deliveryLatitude ??
+        order.delivery_latitude;
 
     const longitude =
-        order.longitude;
-
-
-    let formattedUpdated =
-        "";
-
-
-    if (updated) {
-
-        try {
-
-            formattedUpdated =
-                new Date(
-                    updated
-                ).toLocaleString();
-
-        } catch {
-
-            formattedUpdated =
-                String(updated);
-        }
-    }
+        order.longitude ??
+        order.deliveryLongitude ??
+        order.delivery_longitude;
 
 
     let html = `
@@ -2533,66 +2187,41 @@ function renderTrackingResult(
             </h3>
 
             <p>
-
                 <strong>
                     Order:
                 </strong>
-
-                ${escapeHTML(
-                    orderNumber
-                )}
-
+                ${escapeHTML(orderNumber)}
             </p>
 
             <p>
-
                 <strong>
                     Tracking Code:
                 </strong>
-
-                ${escapeHTML(
-                    trackingCode
-                )}
-
+                ${escapeHTML(trackingCode)}
             </p>
 
             ${
-                formattedUpdated
+                updated
                     ? `
-
                         <p>
-
                             <strong>
                                 Last Updated:
                             </strong>
-
-                            ${escapeHTML(
-                                formattedUpdated
-                            )}
-
+                            ${escapeHTML(updated)}
                         </p>
-
                     `
                     : ""
             }
 
-
             <div class="timeline">
 
-                ${renderTimeline(
-                    status
-                )}
+                ${renderTimeline(status)}
 
             </div>
 
         </div>
     `;
 
-
-    /*
-       Show map only when the order
-       is Out for Delivery.
-    */
 
     if (
         String(status)
@@ -2602,11 +2231,9 @@ function renderTrackingResult(
     ) {
 
         const hasLocation =
-
             Number.isFinite(
                 Number(latitude)
             ) &&
-
             Number.isFinite(
                 Number(longitude)
             );
@@ -2629,7 +2256,6 @@ function renderTrackingResult(
 
                 ${
                     hasLocation
-
                         ? `
 
                             <p>
@@ -2641,21 +2267,12 @@ function renderTrackingResult(
                                 class="btn primary"
                                 target="_blank"
                                 rel="noopener"
-                                href="https://www.openstreetmap.org/?mlat=${encodeURIComponent(
-                                    latitude
-                                )}&mlon=${encodeURIComponent(
-                                    longitude
-                                )}#map=17/${encodeURIComponent(
-                                    latitude
-                                )}/${encodeURIComponent(
-                                    longitude
-                                )}"
+                                href="https://www.openstreetmap.org/?mlat=${encodeURIComponent(latitude)}&mlon=${encodeURIComponent(longitude)}#map=17/${encodeURIComponent(latitude)}/${encodeURIComponent(longitude)}"
                             >
                                 Open Delivery Map
                             </a>
 
                         `
-
                         : `
 
                             <p>
@@ -2671,6 +2288,9 @@ function renderTrackingResult(
     }
 
 
+    result.hidden =
+        false;
+
     result.innerHTML =
         html;
 }
@@ -2680,24 +2300,15 @@ function renderTrackingResult(
    TRACKING TIMELINE
    ========================================================= */
 
-function renderTimeline(
-    currentStatus
-) {
+function renderTimeline(currentStatus) {
 
     const statuses = [
-
         "Order Received",
-
         "Preparing",
-
         "Ready",
-
         "Out for Delivery",
-
         "Delivered"
-
     ];
-
 
     const currentIndex =
         statuses.indexOf(
@@ -2706,59 +2317,50 @@ function renderTimeline(
 
 
     return statuses
+        .map((status, index) => {
 
-        .map(
-            (status, index) => {
+            const completed =
+                currentIndex >= index;
 
-                const completed =
-                    currentIndex >= index;
+            const active =
+                status === currentStatus;
 
+            return `
 
-                const active =
-                    status ===
-                    currentStatus;
-
-
-                return `
-
-                    <div
-                        style="
-                            ${
-                                active
-                                    ? "font-weight:900;"
-                                    : ""
-                            }
-                        "
-                    >
-
+                <div
+                    style="
                         ${
-                            completed
-                                ? "✓"
-                                : "○"
+                            active
+                                ? "font-weight:900;"
+                                : ""
                         }
+                    "
+                >
 
-                        ${escapeHTML(
-                            status
-                        )}
+                    ${
+                        completed
+                            ? "✓"
+                            : "○"
+                    }
 
-                    </div>
-                `;
-            }
-        )
+                    ${escapeHTML(status)}
 
+                </div>
+            `;
+
+        })
         .join("");
 }
 
 
 /* =========================================================
-   CHECKOUT FORM SETUP
+   CHECKOUT FORM
    ========================================================= */
 
 function setupCheckoutForm() {
 
     const form =
         $("checkoutForm");
-
 
     if (!form) {
 
@@ -2769,10 +2371,6 @@ function setupCheckoutForm() {
         return;
     }
 
-
-    /*
-       Prevent normal form submission.
-    */
 
     form.addEventListener(
         "submit",
@@ -2788,10 +2386,6 @@ function setupCheckoutForm() {
         }
     );
 
-
-    /*
-       Find Review button.
-    */
 
     let reviewButton =
         $("reviewOrderButton");
@@ -2821,16 +2415,8 @@ function setupCheckoutForm() {
             "button";
 
 
-        /*
-           Clone to remove any old
-           conflicting click handler.
-        */
-
         const replacement =
-            reviewButton.cloneNode(
-                true
-            );
-
+            reviewButton.cloneNode(true);
 
         reviewButton.parentNode.replaceChild(
             replacement,
@@ -2851,49 +2437,44 @@ function setupCheckoutForm() {
                 event.stopPropagation();
 
                 reviewOrder();
+
             }
+        );
+
+    } else {
+
+        console.warn(
+            "Review Order button not found."
         );
     }
 
 
-    /*
-       Update preview when checkout
-       fields change.
-    */
-
     [
-
         "customerName",
-
         "customerContact",
-
         "paymentMethod",
-
         "customerNotes"
+    ]
+        .forEach(id => {
 
-    ].forEach(id => {
+            const input =
+                $(id);
 
-        const input =
-            $(id);
+            if (!input) {
+                return;
+            }
 
+            input.addEventListener(
+                "input",
+                renderCheckoutPreview
+            );
 
-        if (!input) {
+            input.addEventListener(
+                "change",
+                renderCheckoutPreview
+            );
 
-            return;
-        }
-
-
-        input.addEventListener(
-            "input",
-            renderCheckoutPreview
-        );
-
-
-        input.addEventListener(
-            "change",
-            renderCheckoutPreview
-        );
-    });
+        });
 }
 
 
@@ -2906,12 +2487,9 @@ function setupTrackingForm() {
     const form =
         $("trackingForm");
 
-
     if (!form) {
-
         return;
     }
-
 
     form.addEventListener(
         "submit",
@@ -2929,12 +2507,9 @@ function setupCheckoutButton() {
     const button =
         $("checkoutButton");
 
-
     if (!button) {
-
         return;
     }
-
 
     button.addEventListener(
         "click",
@@ -2957,12 +2532,9 @@ function setupClearCartButton() {
     const button =
         $("clearCartButton");
 
-
     if (!button) {
-
         return;
     }
-
 
     button.addEventListener(
         "click",
@@ -2985,16 +2557,13 @@ function setupMobileMenu() {
     const menuButton =
         $("menuButton");
 
-
     const mobileMenu =
         $("mobileMenu");
-
 
     if (
         !menuButton ||
         !mobileMenu
     ) {
-
         return;
     }
 
@@ -3023,6 +2592,7 @@ function setupMobileMenu() {
                     );
                 }
             );
+
         });
 }
 
@@ -3048,35 +2618,26 @@ function setupNavigation() {
                             "href"
                         );
 
-
                     if (
                         !targetId ||
                         targetId === "#"
                     ) {
-
                         return;
                     }
-
 
                     const target =
                         document.querySelector(
                             targetId
                         );
 
-
                     if (!target) {
-
                         return;
                     }
 
-
                     event.preventDefault();
 
-
                     target.scrollIntoView({
-
-                        behavior:
-                            "smooth"
+                        behavior: "smooth"
                     });
                 }
             );
@@ -3091,7 +2652,6 @@ function setupNavigation() {
 function startStoreClock() {
 
     updateStoreStatus();
-
 
     setInterval(
         updateStoreStatus,
@@ -3113,12 +2673,9 @@ function loadLastOrder() {
                 CONFIG.lastOrderKey
             );
 
-
         if (!saved) {
-
             return null;
         }
-
 
         return JSON.parse(
             saved
@@ -3131,17 +2688,18 @@ function loadLastOrder() {
 }
 
 
+/* =========================================================
+   LAST ORDER DISPLAY
+   ========================================================= */
+
 function setupLastOrder() {
 
     const order =
         loadLastOrder();
 
-
     if (!order) {
-
         return;
     }
-
 
     document
         .querySelectorAll(
@@ -3173,37 +2731,32 @@ function setupLastOrder() {
 function setupGoogleForm() {
 
     const form =
-        $("googleOrderForm");
-
+        $("realGoogleForm");
 
     if (!form) {
 
         console.warn(
-            "googleOrderForm not found on page."
+            "realGoogleForm not found on page."
         );
 
         return;
     }
 
-
     form.action =
         CONFIG.googleFormAction;
-
 
     form.method =
         "POST";
 
-
     form.target =
-        "googleFormTarget";
-
+        "googleFormSubmitFrame";
 
     createGoogleFormIframe();
 }
 
 
 /* =========================================================
-   INITIALIZE DARDOMAMOGS
+   INITIALIZE WEBSITE
    ========================================================= */
 
 function initializeDardomaMOGS() {
@@ -3254,41 +2807,33 @@ function initializeDardomaMOGS() {
 window.addToCart =
     addToCart;
 
-
 window.changeQuantity =
     changeQuantity;
-
 
 window.removeFromCart =
     removeFromCart;
 
-
 window.clearCart =
     clearCart;
-
 
 window.prepareCheckout =
     prepareCheckout;
 
-
 window.reviewOrder =
     reviewOrder;
-
 
 window.cancelReview =
     cancelReview;
 
-
 window.confirmOrder =
     confirmOrder;
-
 
 window.trackOrder =
     trackOrder;
 
 
 /* =========================================================
-   START WEBSITE
+   START
    ========================================================= */
 
 if (
