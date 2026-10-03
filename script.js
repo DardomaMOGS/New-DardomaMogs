@@ -943,75 +943,75 @@ function formatGoogleFormOrder(order) {
 }
 
 function submitGoogleForm(order) {
-    const form =
-        $("realGoogleForm");
+    const form = $("realGoogleForm");
 
     if (!form) {
-        console.warn(
-            "Google Form not found."
-        );
-
-        return;
+        console.error("Google Form not found.");
+        return false;
     }
 
-    const gName =
-        $("gName");
-
-    const gContact =
-        $("gContact");
-
-    const gOrder =
-        $("gOrder");
-
-    const gNotes =
-        $("gNotes");
-
-    const gPayment =
-        $("gPayment");
+    const gName = $("gName");
+    const gContact = $("gContact");
+    const gOrder = $("gOrder");
+    const gNotes = $("gNotes");
+    const gPayment = $("gPayment");
 
     if (gName) {
-        gName.value =
-            order.name;
+        gName.value = order.name;
     }
 
     if (gContact) {
-        gContact.value =
-            order.contact;
+        gContact.value = order.contact;
     }
 
     if (gOrder) {
-        gOrder.value =
-            formatGoogleFormOrder(
-                order
-            );
+        gOrder.value = formatGoogleFormOrder(order);
     }
 
     if (gNotes) {
-        gNotes.value =
-            [
-                `Order Number: ${order.orderNumber}`,
-                `Tracking Code: ${order.trackingToken}`,
-                order.notes
-            ]
-                .filter(Boolean)
-                .join("\n");
+        gNotes.value = [
+            `Order Number: ${order.orderNumber}`,
+            `Tracking Code: ${order.trackingToken}`,
+            order.notes
+        ]
+            .filter(Boolean)
+            .join("\n");
     }
 
     if (gPayment) {
-        gPayment.value =
-            order.payment;
+        gPayment.value = order.payment;
     }
 
+    console.log("Submitting DardomaMOGS order:", {
+        orderNumber: order.orderNumber,
+        trackingCode: order.trackingToken
+    });
+
     try {
-        form.submit();
+        /*
+         * Use the native HTML form submission method directly.
+         * This avoids any element accidentally overriding
+         * form.submit().
+         */
+        HTMLFormElement.prototype.submit.call(form);
+
+        console.log("Google Form submission sent successfully.");
+
+        return true;
+
     } catch (error) {
         console.error(
             "Google Form submission failed:",
             error
         );
+
+        showToast(
+            "Order submission failed. Please try again."
+        );
+
+        return false;
     }
 }
-
 
 /* =========================================================
    CONFIRM ORDER
