@@ -1,1 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <meta
+    name="description"
+    content="DardomaMOGS — Fresh Dardoma flavors, easy ordering and delivery."
+  >
+
+  <title>DardomaMOGS</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- =========================
+       HEADER
+  ========================== -->
+
+  <header class="site-header">
+
+    <a href="#home" class="brand">
+      <span class="brand-icon">🥭</span>
+      <span>Dardoma<span>MOGS</span></span>
+    </a>
+
+    <button
+      class="menu-toggle"
+      id="menuToggle"
+      type="button"
+      aria-label="Open navigation"
+      aria-expanded="false"
+    >
+      ☰
+    </button>
+
+    <nav id="mainNav">
+
+      <a href="#home">Home</a>
+
+      <a href="#products">Products</a>
+
+      <a href="#cart">
+        Cart
+        <span class="nav-cart-count" id="navCartCount">0</span>
+      </a>
+
+      <a href="#checkout">Checkout</a>
+
+      <a href="#tracking">Track Order</a>
+
+    </nav>
+
+  </header>
+
+
+  <main>
+
+    <!-- =========================
+         HERO
+    ========================== -->
+
+    <section class="hero" id="home">
+
+      <div class="hero-content">
+
+        <div class="status-pill" id="storeStatus">
+          Checking store...
+        </div>
+
+        <p class="eyebrow">
+          FRESH • COLD • DARDOMA
+        </p>
+
+        <h1>
+          Welcome to
+          <span>DardomaMOGS</span>
+        </h1>
+
+        <p class="hero-text">
+          Your favorite Dardoma flavors in one place.
+          Choose your flavor, add it to your cart,
+          and get ready for delivery.
+        </p>
+
+        <div class="hero-actions">
+
+          <a href="#products" class="btn primary">
+            Shop Dardoma 🥭
+          </a>
+
+          <a href="#tracking" class="btn secondary">
+            Track an Order 📦
+          </a>
+
+        </div>
+
+        <div class="hero-info">
+
+          <div>
+            <strong>2 PM–2 AM</strong>
+            <span>Store Hours</span>
+          </div>
+
+          <div>
+            <strong>20 EGP</strong>
+            <span>Delivery Fee</span>
+          </div>
+
+          <div>
+            <strong>3</strong>
+            <span>Flavors</span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="hero-art" aria-hidden="true">
+
+        <div class="fruit-orb">
+          🥭
+        </div>
+
+        <div class="floating-fruit fruit-one">
+          ❤️
+        </div>
+
+        <div class="floating-fruit fruit-two">
+          🥤
+        </div>
+
+        <div class="ice">
+          🧊
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         PRODUCTS
+    ========================== -->
+
+    <section class="section products-section" id="products">
+
+      <div class="section-heading">
+
+        <p class="eyebrow">
+          OUR FLAVORS
+        </p>
+
+        <h2>
+          Pick Your Dardoma
+        </h2>
+
+        <p>
+          Choose your favorite flavor and add it to your cart.
+        </p>
+
+      </div>
+
+
+      <div
+        class="product-grid"
+        id="productGrid"
+      ></div>
+
+    </section>
+
+
+    <!-- =========================
+         CART
+    ========================== -->
+
+    <section class="section cart-section" id="cart">
+
+      <div class="section-heading">
+
+        <p class="eyebrow">
+          YOUR ORDER
+        </p>
+
+        <h2>
+          Shopping Cart
+        </h2>
+
+        <p>
+          Check everything before you continue to checkout.
+        </p>
+
+      </div>
+
+
+      <div class="cart-layout">
+
+        <div
+          class="cart-items"
+          id="cartItems"
+        ></div>
+
+
+        <aside class="order-summary">
+
+          <h3>
+            Order Summary
+          </h3>
+
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong id="summarySubtotal">
+              0 EGP
+            </strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Delivery</span>
+            <strong id="summaryDelivery">
+              0 EGP
+            </strong>
+          </div>
+
+          <div class="summary-total">
+            <span>Total</span>
+            <strong id="summaryTotal">
+              0 EGP
+            </strong>
+          </div>
+
+          <button
+            class="btn primary full"
+            id="goCheckout"
+            type="button"
+          >
+            Continue to Checkout
+          </button>
+
+          <button
+            class="btn secondary full"
+            id="clearCart"
+            type="button"
+          >
+            Clear Cart
+          </button>
+
+        </aside>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         CHECKOUT
+    ========================== -->
+
+    <section
+      class="section checkout-section"
+      id="checkout"
+    >
+
+      <div class="section-heading">
+
+        <p class="eyebrow">
+          CHECKOUT
+        </p>
+
+        <h2>
+          Almost There!
+        </h2>
+
+        <p>
+          Enter your information and review your order.
+        </p>
+
+      </div>
+
+
+      <form
+        class="checkout-form"
+        id="checkoutForm"
+      >
+
+        <div
+          class="checkout-preview"
+          id="checkoutPreview"
+        >
+          Your cart is empty.
+        </div>
+
+
+        <div class="form-grid">
+
+          <label>
+            Customer Name *
+            <input
+              id="customerName"
+              type="text"
+              autocomplete="name"
+              placeholder="Your name"
+              required
+            >
+          </label>
+
+
+          <label>
+            Contact Information *
+            <input
+              id="customerContact"
+              type="text"
+              autocomplete="tel"
+              placeholder="Phone number"
+              required
+            >
+          </label>
+
+
+          <label>
+            Payment Method *
+
+            <select
+              id="paymentMethod"
+              required
+            >
+
+              <option value="">
+                Choose payment method
+              </option>
+
+              <option value="Instapay">
+                InstaPay
+              </option>
+
+              <option value="Cash on delivery">
+                Cash on Delivery
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+            Notes
+
+            <input
+              id="customerNotes"
+              type="text"
+              placeholder="Optional notes"
+            >
+
+          </label>
+
+        </div>
+
+
+        <button
+          class="btn primary full"
+          type="submit"
+        >
+          Review Order
+        </button>
+
+
+        <div
+          class="form-message"
+          id="formMessage"
+          role="status"
+        ></div>
+
+      </form>
+
+
+      <!-- REVIEW -->
+
+      <div
+        class="checkout-form review-panel hidden"
+        id="reviewPanel"
+      >
+
+        <div class="review-header">
+
+          <div>
+            <p class="eyebrow">
+              FINAL CHECK
+            </p>
+
+            <h3>
+              Review Your Order
+            </h3>
+          </div>
+
+          <span class="review-icon">
+            👀
+          </span>
+
+        </div>
+
+
+        <div
+          class="checkout-preview"
+          id="reviewContent"
+        ></div>
+
+
+        <div class="review-actions">
+
+          <button
+            class="btn secondary"
+            id="editOrder"
+            type="button"
+          >
+            ← Edit
+          </button>
+
+          <button
+            class="btn primary"
+            id="confirmOrder"
+            type="button"
+          >
+            Confirm & Send Order
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- SUCCESS -->
+
+      <div
+        class="checkout-form success-panel hidden"
+        id="successPanel"
+      >
+
+        <div class="success-icon">
+          🎉
+        </div>
+
+        <p class="eyebrow">
+          ORDER CONFIRMED
+        </p>
+
+        <h3>
+          Your Dardoma is on its way!
+        </h3>
+
+        <p id="successText"></p>
+
+        <a
+          class="btn primary"
+          href="#tracking"
+        >
+          Track Your Order 📦
+        </a>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         TRACKING
+    ========================== -->
+
+    <section
+      class="section tracking-section"
+      id="tracking"
+    >
+
+      <div class="section-heading">
+
+        <p class="eyebrow">
+          ORDER TRACKING
+        </p>
+
+        <h2>
+          Where's My Dardoma?
+        </h2>
+
+        <p>
+          Enter your order number and private tracking code.
+        </p>
+
+      </div>
+
+
+      <div class="tracking-box">
+
+        <div class="tracking-form">
+
+          <input
+            id="trackingOrder"
+            type="text"
+            placeholder="Order number • DM-1234"
+          >
+
+          <input
+            id="trackingToken"
+            type="text"
+            placeholder="Private tracking code"
+          >
+
+          <button
+            class="btn primary"
+            id="trackButton"
+            type="button"
+          >
+            Track
+          </button>
+
+        </div>
+
+
+        <div
+          class="tracking-result hidden"
+          id="trackingResult"
+        ></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+
+  <footer>
+
+    <div class="footer-brand">
+      🥭 DardomaMOGS
+    </div>
+
+    <p>
+      Fresh Dardoma. Simple ordering.
+    </p>
+
+    <div class="footer-links">
+
+      <a href="#home">
+        Home
+      </a>
+
+      <a href="#products">
+        Products
+      </a>
+
+      <a href="#cart">
+        Cart
+      </a>
+
+      <a href="#tracking">
+        Track Order
+      </a>
+
+    </div>
+
+    <p class="small">
+      Store hours: 2:00 PM–2:00 AM
+      • Delivery: 20 EGP
+    </p>
+
+  </footer>
+
+
+  <!-- FLOATING CART -->
+
+  <a
+    class="floating-cart"
+    href="#cart"
+  >
+    🛒
+    <span>
+      Cart
+    </span>
+
+    <strong id="floatingCartCount">
+      0
+    </strong>
+
+  </a>
+
+
+  <!-- =========================
+       EXISTING GOOGLE FORM
+  ========================== -->
+
+  <iframe
+    name="googleFormTarget"
+    id="googleFormTarget"
+    class="hidden-frame"
+    title="Order submission"
+  ></iframe>
+
+
+  <form
+    id="googleOrderForm"
+    action="https://docs.google.com/forms/d/e/1FAIpQLSfcFu09aQGcBszMQvutwk_huj8BK4CqtSwdU8HerbVei-lftw/formResponse"
+    method="POST"
+    target="googleFormTarget"
+  >
+
+    <input
+      name="entry.1661561910"
+      id="gName"
+    >
+
+    <input
+      name="entry.544821231"
+      id="gContact"
+    >
+
+    <input
+      name="entry.1211593112"
+      id="gOrder"
+    >
+
+    <input
+      name="entry.212349483"
+      id="gNotes"
+    >
+
+    <input
+      name="entry.412155072"
+      id="gPayment"
+    >
+
+  </form>
+
+
+  <!-- =========================
+       JAVASCRIPT
+  ========================== -->
+
+  <script src="script.js"></script>
+
+</body>
+</html>
