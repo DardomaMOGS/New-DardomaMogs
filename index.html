@@ -4,41 +4,46 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fffaf1">
-  <meta name="description" content="Sunny Egyptian frozen Dardoma, made for the best part of your day. Mango, Karkade and Cola — 10 EGP each.">
+  <meta name="description" content="Sunny Egyptian frozen Dardoma. Mango, Karkade and Cola — 10 EGP each.">
   <title>DardomaMOGS — A little summer on a stick</title>
-  <link rel="icon" type="image/webp" href="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-5.webp">
+  <link rel="icon" type="image/webp" href="./images/logo.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
-  <script src="/script.js" defer></script>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./script.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+
   <div class="topline">
-    <span class="topline-spark" aria-hidden="true">✳</span>
+    <span aria-hidden="true">✳</span>
     <span>Three little flavors of Egyptian summer</span>
-    <span class="topline-spark" aria-hidden="true">✳</span>
+    <span aria-hidden="true">✳</span>
   </div>
+
   <header class="site-header">
     <a class="brand" href="#home" aria-label="DardomaMOGS home">
-      <img class="brand-mark" src="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-5.webp" alt="" width="42" height="42">
+      <img class="brand-mark" src="./images/logo.webp" alt="" width="42" height="42">
       <span class="brand-name">Dardoma<span>MOGS</span></span>
     </a>
+
     <nav class="desktop-nav" aria-label="Main navigation">
       <a href="#menu">The flavors</a>
       <a href="#story">Our little shop</a>
       <a href="#track">Track an order</a>
     </nav>
+
     <button class="cart-launch" id="cartOpen" type="button" aria-controls="cartDrawer" aria-expanded="false">
-      <span class="cart-icon" aria-hidden="true">♧</span>
-      <span>My bag</span><span class="cart-count" id="cartCount" aria-live="polite">0</span>
+      <span aria-hidden="true">♧</span>
+      <span>My bag</span>
+      <span class="cart-count" id="cartCount" aria-live="polite">0</span>
     </button>
   </header>
 
   <main id="main">
     <section class="hero" id="home" aria-labelledby="heroTitle">
-      <img class="hero-photo" src="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-1.webp" alt="A sunny spread of mango, hibiscus and cola frozen Dardoma">
+      <img class="hero-photo" src="./images/hero.webp" alt="Mango, hibiscus and cola frozen Dardoma" onerror="this.style.display='none'">
       <div class="hero-tint" aria-hidden="true"></div>
       <div class="hero-copy">
         <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR SUNNY LITTLE FREEZER</p>
@@ -66,11 +71,13 @@
         </div>
         <p class="section-note">Small-batch frozen joy, one stick at a time.<br><strong>Every flavor, just 10 EGP.</strong></p>
       </div>
+
       <div class="flavor-tabs" aria-label="Flavor notes">
         <span class="flavor-tab mango-tab"><i aria-hidden="true"></i> Sun-ripened</span>
         <span class="flavor-tab karkade-tab"><i aria-hidden="true"></i> Ruby bright</span>
-        <span class="flavor-tab cola-tab"><i aria-hidden="true"></i> Cool & fizzy</span>
+        <span class="flavor-tab cola-tab"><i aria-hidden="true"></i> Cool &amp; fizzy</span>
       </div>
+
       <div class="product-grid" id="productGrid" aria-live="polite"></div>
       <p class="menu-footnote"><span aria-hidden="true">✳</span> Easy choice: try one, or make it a three-flavor kind of day.</p>
     </section>
@@ -81,6 +88,7 @@
         <p class="eyebrow eyebrow-light">A NEIGHBORHOOD KIND OF TREAT</p>
         <h2 id="storyTitle">The best plans<br>usually <em>melt.</em></h2>
         <p>Real summer flavors, a simple wooden stick, and a little pause in your day. That’s our kind of special.</p>
+
         <div class="story-details">
           <div><span class="detail-icon" aria-hidden="true">☀</span><strong>Here for the sunny hours</strong><small>2:00 PM to 2:00 AM, Cairo time</small></div>
           <div><span class="detail-icon" aria-hidden="true">♥</span><strong>Little price, big smile</strong><small>10 EGP each · 20 EGP delivery</small></div>
@@ -96,6 +104,7 @@
         <p class="eyebrow eyebrow-green">ON ITS WAY? LET’S SEE.</p>
         <h2 id="trackTitle">Follow your<br>frozen friend.</h2>
         <p class="track-intro">Enter the order number and private tracking code from your confirmation.</p>
+
         <form id="trackingForm" class="tracking-form" novalidate>
           <label for="trackOrder">Order number</label>
           <input id="trackOrder" name="orderNumber" type="text" placeholder="DM-20261009-…" autocomplete="off" required maxlength="48">
@@ -103,15 +112,20 @@
           <input id="trackCode" name="trackingCode" type="text" placeholder="Your private code" autocomplete="off" required maxlength="40">
           <button class="button button-dark" type="submit">Find my order <span aria-hidden="true">→</span></button>
         </form>
+
         <p class="form-message" id="trackingMessage" role="status" aria-live="polite" hidden></p>
+
         <div class="tracking-result" id="trackingResult" hidden aria-live="polite">
-          <div class="tracking-result-head"><span class="result-kicker">YOUR ORDER</span><strong id="trackedOrderNumber"></strong></div>
+          <div class="tracking-result-head">
+            <span class="result-kicker">YOUR ORDER</span>
+            <strong id="trackedOrderNumber"></strong>
+          </div>
           <p class="tracked-status" id="trackedStatus"></p>
           <ol class="status-steps" id="statusSteps" aria-label="Order progress"></ol>
           <p class="tracked-meta" id="trackedMeta"></p>
           <div class="delivery-map" id="deliveryMap" hidden>
             <p><span class="status-light status-light-open"></span> Your Dardoma is out for delivery</p>
-            <iframe id="mapFrame" title="Live delivery location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe id="mapFrame" title="Delivery location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </div>
       </div>
@@ -126,7 +140,7 @@
 
   <footer class="site-footer">
     <a class="brand footer-brand" href="#home">
-      <img class="brand-mark" src="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-5.webp" alt="" width="34" height="34">
+      <img class="brand-mark" src="./images/logo.webp" alt="" width="34" height="34">
       <span class="brand-name">Dardoma<span>MOGS</span></span>
     </a>
     <span>Made of sunshine &amp; a little bit of frost.</span>
@@ -134,9 +148,13 @@
   </footer>
 
   <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+
   <aside class="cart-drawer" id="cartDrawer" aria-labelledby="cartTitle" aria-hidden="true" inert>
     <div class="drawer-header">
-      <div><p class="eyebrow eyebrow-green">GOOD CHOICES</p><h2 id="cartTitle">Your little bag<span class="cart-count drawer-count" id="drawerCount">0</span></h2></div>
+      <div>
+        <p class="eyebrow eyebrow-green">GOOD CHOICES</p>
+        <h2 id="cartTitle">Your little bag <span class="cart-count drawer-count" id="drawerCount">0</span></h2>
+      </div>
       <button class="icon-button" id="cartClose" type="button" aria-label="Close bag">×</button>
     </div>
     <div class="cart-items" id="cartItems"></div>
@@ -156,27 +174,40 @@
     <div class="checkout-heading">
       <p class="eyebrow eyebrow-green">JUST A FEW LITTLE DETAILS</p>
       <h2 id="checkoutTitle">Almost <em>yours.</em></h2>
-      <p>Your order will be sent securely to the shop for confirmation.</p>
+      <p>Your order will be sent to the shop for confirmation.</p>
     </div>
+
     <form id="checkoutForm" novalidate>
       <div class="checkout-fields" id="checkoutFields">
         <label for="customerName">Your name</label>
         <input id="customerName" name="customerName" autocomplete="name" maxlength="120" required placeholder="What should we call you?">
+
         <label for="customerContact">Contact information</label>
         <input id="customerContact" name="contact" autocomplete="tel" maxlength="80" required placeholder="Mobile number or email">
+
         <fieldset class="payment-fieldset">
           <legend>How would you like to pay?</legend>
-          <label class="payment-option"><input type="radio" name="paymentMethod" value="InstaPay" checked><span class="payment-mark">↗</span><span><strong>InstaPay</strong><small>Choose this at checkout; the shop will confirm payment details.</small></span></label>
-          <label class="payment-option"><input type="radio" name="paymentMethod" value="Cash on Delivery"><span class="payment-mark">EGP</span><span><strong>Cash on Delivery</strong><small>Pay when your order arrives.</small></span></label>
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="InstaPay" checked>
+            <span class="payment-mark">↗</span>
+            <span><strong>InstaPay</strong><small>The shop will confirm payment details.</small></span>
+          </label>
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="Cash on Delivery">
+            <span class="payment-mark">EGP</span>
+            <span><strong>Cash on Delivery</strong><small>Pay when your order arrives.</small></span>
+          </label>
         </fieldset>
+
         <label for="orderNotes">Little note for us <span class="optional-label">optional</span></label>
         <textarea id="orderNotes" name="notes" rows="3" maxlength="1000" placeholder="Anything we should know?"></textarea>
         <button class="button button-dark full-button" id="reviewOrder" type="button">Review my order <span aria-hidden="true">→</span></button>
       </div>
+
       <div class="review-panel" id="reviewPanel" hidden>
         <p class="eyebrow eyebrow-green">ONE LAST LOOK</p>
         <div class="review-lines" id="reviewLines"></div>
-        <p class="review-note">Please check your name, contact number, order and total before sending. The shop is notified after you confirm.</p>
+        <p class="review-note">Check your name, contact number, order and total before sending. The shop is notified after you confirm.</p>
         <div class="review-actions">
           <button class="button button-soft" id="editOrder" type="button">Go back</button>
           <button class="button button-primary" id="confirmOrder" type="button">Confirm order <span aria-hidden="true">✓</span></button>
