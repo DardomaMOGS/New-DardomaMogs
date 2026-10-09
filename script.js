@@ -7,7 +7,7 @@
 
 const CONFIG = Object.freeze({
   // Paste your deployed Apps Script Web App URL here, ending in /exec.
-  API_URL: "",
+  API_URL: "https://script.google.com/macros/s/AKfycby9GyMIelR3lAnmaAaJlPBWMKw8v_SdIDuc6ZT_useCESQCM-TyPvXVYPG-JTOkB5WAVg/exec",
 
   timeZone: "Africa/Cairo",
   openHour: 14,
