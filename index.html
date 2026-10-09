@@ -1,646 +1,203 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <meta
-    name="description"
-    content="DardomaMOGS — Fresh Dardoma flavors, easy ordering and delivery."
-  >
-
-  <title>DardomaMOGS</title>
-
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffaf1">
+  <meta name="description" content="Sunny Egyptian frozen Dardoma, made for the best part of your day. Mango, Karkade and Cola — 10 EGP each.">
+  <title>DardomaMOGS — A little summer on a stick</title>
+  <link rel="icon" type="image/webp" href="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-5.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/script.js" defer></script>
 </head>
-
 <body>
-
-  <!-- =========================
-       HEADER
-  ========================== -->
-
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="topline">
+    <span class="topline-spark" aria-hidden="true">✳</span>
+    <span>Three little flavors of Egyptian summer</span>
+    <span class="topline-spark" aria-hidden="true">✳</span>
+  </div>
   <header class="site-header">
-
-    <a href="#home" class="brand">
-      <span class="brand-icon">🥭</span>
-      <span>Dardoma<span>MOGS</span></span>
+    <a class="brand" href="#home" aria-label="DardomaMOGS home">
+      <img class="brand-mark" src="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-5.webp" alt="" width="42" height="42">
+      <span class="brand-name">Dardoma<span>MOGS</span></span>
     </a>
-
-    <button
-      class="menu-toggle"
-      id="menuToggle"
-      type="button"
-      aria-label="Open navigation"
-      aria-expanded="false"
-    >
-      ☰
-    </button>
-
-    <nav id="mainNav">
-
-      <a href="#home">Home</a>
-
-      <a href="#products">Products</a>
-
-      <a href="#cart">
-        Cart
-        <span class="nav-cart-count" id="navCartCount">0</span>
-      </a>
-
-      <a href="#checkout">Checkout</a>
-
-      <a href="#tracking">Track Order</a>
-
+    <nav class="desktop-nav" aria-label="Main navigation">
+      <a href="#menu">The flavors</a>
+      <a href="#story">Our little shop</a>
+      <a href="#track">Track an order</a>
     </nav>
-
+    <button class="cart-launch" id="cartOpen" type="button" aria-controls="cartDrawer" aria-expanded="false">
+      <span class="cart-icon" aria-hidden="true">♧</span>
+      <span>My bag</span><span class="cart-count" id="cartCount" aria-live="polite">0</span>
+    </button>
   </header>
 
-
-  <main>
-
-    <!-- =========================
-         HERO
-    ========================== -->
-
-    <section class="hero" id="home">
-
-      <div class="hero-content">
-
-        <div class="status-pill" id="storeStatus">
-          Checking store...
-        </div>
-
-        <p class="eyebrow">
-          FRESH • COLD • DARDOMA
-        </p>
-
-        <h1>
-          Welcome to
-          <span>DardomaMOGS</span>
-        </h1>
-
-        <p class="hero-text">
-          Your favorite Dardoma flavors in one place.
-          Choose your flavor, add it to your cart,
-          and get ready for delivery.
-        </p>
-
-        <div class="hero-actions">
-
-          <a href="#products" class="btn primary">
-            Shop Dardoma 🥭
-          </a>
-
-          <a href="#tracking" class="btn secondary">
-            Track an Order 📦
-          </a>
-
-        </div>
-
-        <div class="hero-info">
-
-          <div>
-            <strong>2 PM–2 AM</strong>
-            <span>Store Hours</span>
-          </div>
-
-          <div>
-            <strong>20 EGP</strong>
-            <span>Delivery Fee</span>
-          </div>
-
-          <div>
-            <strong>3</strong>
-            <span>Flavors</span>
-          </div>
-
-        </div>
-
+  <main id="main">
+    <section class="hero" id="home" aria-labelledby="heroTitle">
+      <img class="hero-photo" src="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-1.webp" alt="A sunny spread of mango, hibiscus and cola frozen Dardoma">
+      <div class="hero-tint" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR SUNNY LITTLE FREEZER</p>
+        <h1 id="heroTitle">A little summer<br>on a <em>stick.</em></h1>
+        <p class="hero-lede">A neighborhood favorite, frozen just right.<br>Pick your flavor. We’ll bring the sunshine.</p>
+        <a class="button button-primary hero-cta" href="#menu">Pick your Dardoma <span aria-hidden="true">↗</span></a>
+        <div class="hero-stamp"><span>EGYPTIAN<br>SUMMER</span><b aria-hidden="true">✳</b></div>
       </div>
-
-
-      <div class="hero-art" aria-hidden="true">
-
-        <div class="fruit-orb">
-          🥭
-        </div>
-
-        <div class="floating-fruit fruit-one">
-          ❤️
-        </div>
-
-        <div class="floating-fruit fruit-two">
-          🥤
-        </div>
-
-        <div class="ice">
-          🧊
-        </div>
-
-      </div>
-
+      <div class="hero-caption"><span>MADE FOR THE MELT</span><span>10 EGP · EACH</span></div>
     </section>
 
+    <div class="store-ribbon" aria-live="polite">
+      <span class="status-light" id="statusLight" aria-hidden="true"></span>
+      <strong id="storeStatus">Checking today’s store hours…</strong>
+      <span class="ribbon-divider" aria-hidden="true">/</span>
+      <span id="storeStatusDetail">2:00 PM — 2:00 AM · Cairo time</span>
+      <a href="#menu" class="ribbon-link">Go to the flavors <span aria-hidden="true">↓</span></a>
+    </div>
 
-    <!-- =========================
-         PRODUCTS
-    ========================== -->
-
-    <section class="section products-section" id="products">
-
+    <section class="menu-section section-wrap" id="menu" aria-labelledby="menuTitle">
       <div class="section-heading">
-
-        <p class="eyebrow">
-          OUR FLAVORS
-        </p>
-
-        <h2>
-          Pick Your Dardoma
-        </h2>
-
-        <p>
-          Choose your favorite flavor and add it to your cart.
-        </p>
-
+        <div>
+          <p class="eyebrow eyebrow-green">THE LITTLE LINEUP</p>
+          <h2 id="menuTitle">Three good<br class="mobile-break"> reasons to pause.</h2>
+        </div>
+        <p class="section-note">Small-batch frozen joy, one stick at a time.<br><strong>Every flavor, just 10 EGP.</strong></p>
       </div>
-
-
-      <div
-        class="product-grid"
-        id="productGrid"
-      ></div>
-
+      <div class="flavor-tabs" aria-label="Flavor notes">
+        <span class="flavor-tab mango-tab"><i aria-hidden="true"></i> Sun-ripened</span>
+        <span class="flavor-tab karkade-tab"><i aria-hidden="true"></i> Ruby bright</span>
+        <span class="flavor-tab cola-tab"><i aria-hidden="true"></i> Cool & fizzy</span>
+      </div>
+      <div class="product-grid" id="productGrid" aria-live="polite"></div>
+      <p class="menu-footnote"><span aria-hidden="true">✳</span> Easy choice: try one, or make it a three-flavor kind of day.</p>
     </section>
 
-
-    <!-- =========================
-         CART
-    ========================== -->
-
-    <section class="section cart-section" id="cart">
-
-      <div class="section-heading">
-
-        <p class="eyebrow">
-          YOUR ORDER
-        </p>
-
-        <h2>
-          Shopping Cart
-        </h2>
-
-        <p>
-          Check everything before you continue to checkout.
-        </p>
-
+    <section class="story-section" id="story" aria-labelledby="storyTitle">
+      <div class="story-decoration" aria-hidden="true">✳</div>
+      <div class="story-inner">
+        <p class="eyebrow eyebrow-light">A NEIGHBORHOOD KIND OF TREAT</p>
+        <h2 id="storyTitle">The best plans<br>usually <em>melt.</em></h2>
+        <p>Real summer flavors, a simple wooden stick, and a little pause in your day. That’s our kind of special.</p>
+        <div class="story-details">
+          <div><span class="detail-icon" aria-hidden="true">☀</span><strong>Here for the sunny hours</strong><small>2:00 PM to 2:00 AM, Cairo time</small></div>
+          <div><span class="detail-icon" aria-hidden="true">♥</span><strong>Little price, big smile</strong><small>10 EGP each · 20 EGP delivery</small></div>
+          <div><span class="detail-icon" aria-hidden="true">↗</span><strong>Your choice at checkout</strong><small>InstaPay or Cash on Delivery</small></div>
+        </div>
       </div>
-
-
-      <div class="cart-layout">
-
-        <div
-          class="cart-items"
-          id="cartItems"
-        ></div>
-
-
-        <aside class="order-summary">
-
-          <h3>
-            Order Summary
-          </h3>
-
-          <div class="summary-row">
-            <span>Subtotal</span>
-            <strong id="summarySubtotal">
-              0 EGP
-            </strong>
-          </div>
-
-          <div class="summary-row">
-            <span>Delivery</span>
-            <strong id="summaryDelivery">
-              0 EGP
-            </strong>
-          </div>
-
-          <div class="summary-total">
-            <span>Total</span>
-            <strong id="summaryTotal">
-              0 EGP
-            </strong>
-          </div>
-
-          <button
-            class="btn primary full"
-            id="goCheckout"
-            type="button"
-          >
-            Continue to Checkout
-          </button>
-
-          <button
-            class="btn secondary full"
-            id="clearCart"
-            type="button"
-          >
-            Clear Cart
-          </button>
-
-        </aside>
-
-      </div>
-
+      <div class="story-side-note">SLOW DOWN.<br>COOL DOWN.<br>BE RIGHT BACK.</div>
     </section>
 
-
-    <!-- =========================
-         CHECKOUT
-    ========================== -->
-
-    <section
-      class="section checkout-section"
-      id="checkout"
-    >
-
-      <div class="section-heading">
-
-        <p class="eyebrow">
-          CHECKOUT
-        </p>
-
-        <h2>
-          Almost There!
-        </h2>
-
-        <p>
-          Enter your information and review your order.
-        </p>
-
-      </div>
-
-
-      <form
-        class="checkout-form"
-        id="checkoutForm"
-      >
-
-        <div
-          class="checkout-preview"
-          id="checkoutPreview"
-        >
-          Your cart is empty.
-        </div>
-
-
-        <div class="form-grid">
-
-          <label>
-            Customer Name *
-            <input
-              id="customerName"
-              type="text"
-              autocomplete="name"
-              placeholder="Your name"
-              required
-            >
-          </label>
-
-
-          <label>
-            Contact Information *
-            <input
-              id="customerContact"
-              type="text"
-              autocomplete="tel"
-              placeholder="Phone number"
-              required
-            >
-          </label>
-
-
-          <label>
-            Payment Method *
-
-            <select
-              id="paymentMethod"
-              required
-            >
-
-              <option value="">
-                Choose payment method
-              </option>
-
-              <option value="Instapay">
-                InstaPay
-              </option>
-
-              <option value="Cash on delivery">
-                Cash on Delivery
-              </option>
-
-            </select>
-
-          </label>
-
-
-          <label>
-            Notes
-
-            <input
-              id="customerNotes"
-              type="text"
-              placeholder="Optional notes"
-            >
-
-          </label>
-
-        </div>
-
-
-        <button
-          class="btn primary full"
-          type="submit"
-        >
-          Review Order
-        </button>
-
-
-        <div
-          class="form-message"
-          id="formMessage"
-          role="status"
-        ></div>
-
-      </form>
-
-
-      <!-- REVIEW -->
-
-      <div
-        class="checkout-form review-panel hidden"
-        id="reviewPanel"
-      >
-
-        <div class="review-header">
-
-          <div>
-            <p class="eyebrow">
-              FINAL CHECK
-            </p>
-
-            <h3>
-              Review Your Order
-            </h3>
+    <section class="tracking-section section-wrap" id="track" aria-labelledby="trackTitle">
+      <div class="track-art" aria-hidden="true"><span class="track-sun">✳</span><span class="track-stick"></span></div>
+      <div class="track-content">
+        <p class="eyebrow eyebrow-green">ON ITS WAY? LET’S SEE.</p>
+        <h2 id="trackTitle">Follow your<br>frozen friend.</h2>
+        <p class="track-intro">Enter the order number and private tracking code from your confirmation.</p>
+        <form id="trackingForm" class="tracking-form" novalidate>
+          <label for="trackOrder">Order number</label>
+          <input id="trackOrder" name="orderNumber" type="text" placeholder="DM-20261009-…" autocomplete="off" required maxlength="48">
+          <label for="trackCode">Tracking code</label>
+          <input id="trackCode" name="trackingCode" type="text" placeholder="Your private code" autocomplete="off" required maxlength="40">
+          <button class="button button-dark" type="submit">Find my order <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="form-message" id="trackingMessage" role="status" aria-live="polite" hidden></p>
+        <div class="tracking-result" id="trackingResult" hidden aria-live="polite">
+          <div class="tracking-result-head"><span class="result-kicker">YOUR ORDER</span><strong id="trackedOrderNumber"></strong></div>
+          <p class="tracked-status" id="trackedStatus"></p>
+          <ol class="status-steps" id="statusSteps" aria-label="Order progress"></ol>
+          <p class="tracked-meta" id="trackedMeta"></p>
+          <div class="delivery-map" id="deliveryMap" hidden>
+            <p><span class="status-light status-light-open"></span> Your Dardoma is out for delivery</p>
+            <iframe id="mapFrame" title="Live delivery location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
-
-          <span class="review-icon">
-            👀
-          </span>
-
         </div>
-
-
-        <div
-          class="checkout-preview"
-          id="reviewContent"
-        ></div>
-
-
-        <div class="review-actions">
-
-          <button
-            class="btn secondary"
-            id="editOrder"
-            type="button"
-          >
-            ← Edit
-          </button>
-
-          <button
-            class="btn primary"
-            id="confirmOrder"
-            type="button"
-          >
-            Confirm & Send Order
-          </button>
-
-        </div>
-
       </div>
-
-
-      <!-- SUCCESS -->
-
-      <div
-        class="checkout-form success-panel hidden"
-        id="successPanel"
-      >
-
-        <div class="success-icon">
-          🎉
-        </div>
-
-        <p class="eyebrow">
-          ORDER CONFIRMED
-        </p>
-
-        <h3>
-          Your Dardoma is on its way!
-        </h3>
-
-        <p id="successText"></p>
-
-        <a
-          class="btn primary"
-          href="#tracking"
-        >
-          Track Your Order 📦
-        </a>
-
-      </div>
-
     </section>
 
-
-    <!-- =========================
-         TRACKING
-    ========================== -->
-
-    <section
-      class="section tracking-section"
-      id="tracking"
-    >
-
-      <div class="section-heading">
-
-        <p class="eyebrow">
-          ORDER TRACKING
-        </p>
-
-        <h2>
-          Where's My Dardoma?
-        </h2>
-
-        <p>
-          Enter your order number and private tracking code.
-        </p>
-
-      </div>
-
-
-      <div class="tracking-box">
-
-        <div class="tracking-form">
-
-          <input
-            id="trackingOrder"
-            type="text"
-            placeholder="Order number • DM-1234"
-          >
-
-          <input
-            id="trackingToken"
-            type="text"
-            placeholder="Private tracking code"
-          >
-
-          <button
-            class="btn primary"
-            id="trackButton"
-            type="button"
-          >
-            Track
-          </button>
-
-        </div>
-
-
-        <div
-          class="tracking-result hidden"
-          id="trackingResult"
-        ></div>
-
-      </div>
-
+    <section class="closing-note" aria-label="Store hours and delivery information">
+      <span class="closing-sun" aria-hidden="true">✳</span>
+      <p><strong>Still sunny somewhere.</strong> We’re here from 2 in the afternoon until 2 in the morning.</p>
+      <a href="#menu">Choose a flavor <span aria-hidden="true">↑</span></a>
     </section>
-
   </main>
 
-
-  <!-- =========================
-       FOOTER
-  ========================== -->
-
-  <footer>
-
-    <div class="footer-brand">
-      🥭 DardomaMOGS
-    </div>
-
-    <p>
-      Fresh Dardoma. Simple ordering.
-    </p>
-
-    <div class="footer-links">
-
-      <a href="#home">
-        Home
-      </a>
-
-      <a href="#products">
-        Products
-      </a>
-
-      <a href="#cart">
-        Cart
-      </a>
-
-      <a href="#tracking">
-        Track Order
-      </a>
-
-    </div>
-
-    <p class="small">
-      Store hours: 2:00 PM–2:00 AM
-      • Delivery: 20 EGP
-    </p>
-
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="#home">
+      <img class="brand-mark" src="/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-5.webp" alt="" width="34" height="34">
+      <span class="brand-name">Dardoma<span>MOGS</span></span>
+    </a>
+    <span>Made of sunshine &amp; a little bit of frost.</span>
+    <a class="back-top" href="#home">Back to the top ↑</a>
   </footer>
 
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="cart-drawer" id="cartDrawer" aria-labelledby="cartTitle" aria-hidden="true" inert>
+    <div class="drawer-header">
+      <div><p class="eyebrow eyebrow-green">GOOD CHOICES</p><h2 id="cartTitle">Your little bag<span class="cart-count drawer-count" id="drawerCount">0</span></h2></div>
+      <button class="icon-button" id="cartClose" type="button" aria-label="Close bag">×</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <button class="text-button clear-cart" id="clearCart" type="button">Clear the whole bag</button>
+    <div class="cart-summary" aria-live="polite">
+      <div><span>Subtotal</span><strong id="cartSubtotal">0 EGP</strong></div>
+      <div><span>Delivery</span><strong id="cartDelivery">0 EGP</strong></div>
+      <div class="cart-total"><span>Total</span><strong id="cartTotal">0 EGP</strong></div>
+    </div>
+    <p class="cart-hours-note" id="cartHoursNote"></p>
+    <button class="button button-primary cart-checkout" id="checkoutOpen" type="button">On to checkout <span aria-hidden="true">→</span></button>
+    <p class="cart-reassurance">Review everything before your order is sent.</p>
+  </aside>
 
-  <!-- FLOATING CART -->
+  <dialog class="checkout-dialog" id="checkoutDialog" aria-labelledby="checkoutTitle">
+    <button class="icon-button dialog-close" id="checkoutClose" type="button" aria-label="Close checkout">×</button>
+    <div class="checkout-heading">
+      <p class="eyebrow eyebrow-green">JUST A FEW LITTLE DETAILS</p>
+      <h2 id="checkoutTitle">Almost <em>yours.</em></h2>
+      <p>Your order will be sent securely to the shop for confirmation.</p>
+    </div>
+    <form id="checkoutForm" novalidate>
+      <div class="checkout-fields" id="checkoutFields">
+        <label for="customerName">Your name</label>
+        <input id="customerName" name="customerName" autocomplete="name" maxlength="120" required placeholder="What should we call you?">
+        <label for="customerContact">Contact information</label>
+        <input id="customerContact" name="contact" autocomplete="tel" maxlength="80" required placeholder="Mobile number or email">
+        <fieldset class="payment-fieldset">
+          <legend>How would you like to pay?</legend>
+          <label class="payment-option"><input type="radio" name="paymentMethod" value="InstaPay" checked><span class="payment-mark">↗</span><span><strong>InstaPay</strong><small>Choose this at checkout; the shop will confirm payment details.</small></span></label>
+          <label class="payment-option"><input type="radio" name="paymentMethod" value="Cash on Delivery"><span class="payment-mark">EGP</span><span><strong>Cash on Delivery</strong><small>Pay when your order arrives.</small></span></label>
+        </fieldset>
+        <label for="orderNotes">Little note for us <span class="optional-label">optional</span></label>
+        <textarea id="orderNotes" name="notes" rows="3" maxlength="1000" placeholder="Anything we should know?"></textarea>
+        <button class="button button-dark full-button" id="reviewOrder" type="button">Review my order <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="review-panel" id="reviewPanel" hidden>
+        <p class="eyebrow eyebrow-green">ONE LAST LOOK</p>
+        <div class="review-lines" id="reviewLines"></div>
+        <p class="review-note">Please check your name, contact number, order and total before sending. The shop is notified after you confirm.</p>
+        <div class="review-actions">
+          <button class="button button-soft" id="editOrder" type="button">Go back</button>
+          <button class="button button-primary" id="confirmOrder" type="button">Confirm order <span aria-hidden="true">✓</span></button>
+        </div>
+      </div>
+      <p class="checkout-error" id="checkoutError" role="alert" hidden></p>
+    </form>
+  </dialog>
 
-  <a
-    class="floating-cart"
-    href="#cart"
-  >
-    🛒
-    <span>
-      Cart
-    </span>
+  <dialog class="confirmation-dialog" id="confirmationDialog" aria-labelledby="confirmationTitle">
+    <button class="icon-button dialog-close" id="confirmationClose" type="button" aria-label="Close confirmation">×</button>
+    <span class="confirmation-flower" aria-hidden="true">✳</span>
+    <p class="eyebrow eyebrow-green">IT’S OFFICIAL</p>
+    <h2 id="confirmationTitle">Your order is<br><em>in good hands.</em></h2>
+    <p class="confirmation-copy">Keep these two details somewhere safe. You’ll need both to follow your order.</p>
+    <div class="confirmation-code"><span>ORDER NUMBER</span><strong id="confirmedOrderNumber"></strong></div>
+    <div class="confirmation-code"><span>PRIVATE TRACKING CODE</span><strong id="confirmedTrackingCode"></strong></div>
+    <p class="confirmation-total" id="confirmationTotal"></p>
+    <button class="button button-dark full-button" id="followOrder" type="button">Track this little friend <span aria-hidden="true">→</span></button>
+  </dialog>
 
-    <strong id="floatingCartCount">
-      0
-    </strong>
-
-  </a>
-
-
-  <!-- =========================
-       EXISTING GOOGLE FORM
-  ========================== -->
-
-  <iframe
-    name="googleFormTarget"
-    id="googleFormTarget"
-    class="hidden-frame"
-    title="Order submission"
-  ></iframe>
-
-
-  <form
-    id="googleOrderForm"
-    action="https://docs.google.com/forms/d/e/1FAIpQLSfcFu09aQGcBszMQvutwk_huj8BK4CqtSwdU8HerbVei-lftw/formResponse"
-    method="POST"
-    target="googleFormTarget"
-  >
-
-    <input
-      name="entry.1661561910"
-      id="gName"
-    >
-
-    <input
-      name="entry.544821231"
-      id="gContact"
-    >
-
-    <input
-      name="entry.1211593112"
-      id="gOrder"
-    >
-
-    <input
-      name="entry.212349483"
-      id="gNotes"
-    >
-
-    <input
-      name="entry.412155072"
-      id="gPayment"
-    >
-
-  </form>
-
-
-  <!-- =========================
-       JAVASCRIPT
-  ========================== -->
-
-  <script src="script.js"></script>
-
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
