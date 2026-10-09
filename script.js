@@ -1,410 +1,715 @@
-'use strict';
+"use strict";
 
-const PRODUCTS = [
-  { id: 'mango', name: 'Mango Dardoma', emoji: '🥭', price: 10, note: 'Sun-ripened & golden', badge: 'THE SUNNY ONE', image: '/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-2.webp', alt: 'Golden mango frozen Dardoma on a wooden stick' },
-  { id: 'karkade', name: 'Karkade Dardoma', emoji: '❤️', price: 10, note: 'Ruby-bright hibiscus', badge: 'THE RUBY ONE', image: '/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-3.webp', alt: 'Ruby hibiscus karkade frozen Dardoma on a wooden stick' },
-  { id: 'pepsi', name: 'Pepsi Dardoma', emoji: '🥤', price: 10, note: 'Cool cola with a fizz', badge: 'THE COOL ONE', image: '/manus-storage/async-images/EFwNspnXENR7DdkqtqWT3U/image-4.webp', alt: 'Cola-brown frozen Dardoma on a wooden stick' }
-];
-const DELIVERY_FEE = 20;
-const CART_KEY = 'dardomamogs.cart.v1';
-const API_URL = ''; // After deploying Code.gs, paste its /exec web-app URL here.
-const ORDER_STATUSES = ['Order Received', 'Preparing', 'Ready', 'Out for Delivery', 'Delivered'];
-let cart = loadCart();
-let toastTimer;
-let activeTrackingScript = null;
+/* =========================================================
+   DardomaMOGS — store frontend
+   GitHub Pages + Google Apps Script + Google Sheets
+   ========================================================= */
 
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-const money = amount => `${new Intl.NumberFormat('en-EG', { maximumFractionDigits: 0 }).format(amount)} EGP`;
-const productById = id => PRODUCTS.find(product => product.id === id);
+const CONFIG = Object.freeze({
+  // Paste your deployed Apps Script Web App URL here, ending in /exec.
+  API_URL: "",
 
-function loadCart() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CART_KEY) || '{}');
-    return Object.fromEntries(Object.entries(saved).filter(([id, quantity]) => productById(id) && Number.isInteger(quantity) && quantity > 0).map(([id, quantity]) => [id, Math.min(quantity, 99)]));
-  } catch (_) {
-    return {};
+  timeZone: "Africa/Cairo",
+  openHour: 14,
+  closeHour: 2,
+  deliveryFee: 20,
+  currency: "EGP",
+  cartKey: "dardomamogs.cart.v2",
+  maxQuantity: 99
+});
+
+const PRODUCTS = Object.freeze([
+  {
+    id: "mango",
+    name: "Mango Dardoma",
+    price: 10,
+    description: "Sweet mango flavor",
+    emoji: "🥭",
+    image: "./images/mango.webp",
+    kicker: "Sun-ripened"
+  },
+  {
+    id: "karkade",
+    name: "Karkade Dardoma",
+    price: 10,
+    description: "Bright, fruity hibiscus",
+    emoji: "❤️",
+    image: "./images/karkade.webp",
+    kicker: "Ruby bright"
+  },
+  {
+    id: "pepsi",
+    name: "Pepsi Dardoma",
+    price: 10,
+    description: "A cool cola-inspired treat",
+    emoji: "🥤",
+    image: "./images/pepsi.webp",
+    kicker: "Cool & fizzy"
   }
-}
+]);
 
-function persistCart() {
-  try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
-  catch (_) { showToast('Your browser could not save this bag. Please keep this page open.'); }
-  renderCart();
+const ORDER_STATUSES = Object.freeze([
+  "Order Received",
+  "Preparing",
+  "Ready",
+  "Out for Delivery",
+  "Delivered"
+]);
+
+const $ = (id) => document.getElementById(id);
+let cart = loadCart();
+let submitting = false;
+let toastTimeout = null;
+
+function money(amount) {
+  return `${Number(amount || 0).toLocaleString("en-US")} ${CONFIG.currency}`;
 }
 
 function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+function getProduct(id) {
+  return PRODUCTS.find((product) => product.id === id);
+}
+
+function loadCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONFIG.cartKey) || "[]");
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .filter((item) => getProduct(item.id))
+      .map((item) => ({
+        id: item.id,
+        quantity: Math.max(1, Math.min(CONFIG.maxQuantity, Math.floor(Number(item.quantity) || 1)))
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function saveCart() {
+  try {
+    localStorage.setItem(CONFIG.cartKey, JSON.stringify(cart));
+  } catch {
+    showToast("Your browser couldn't save the bag. You can still continue for now.");
+  }
+}
+
+function cartQuantity() {
+  return cart.reduce((total, item) => total + item.quantity, 0);
+}
+
+function subtotal() {
+  return cart.reduce((total, item) => {
+    const product = getProduct(item.id);
+    return total + (product ? product.price * item.quantity : 0);
+  }, 0);
+}
+
+function deliveryFee() {
+  return cart.length ? CONFIG.deliveryFee : 0;
+}
+
+function total() {
+  return subtotal() + deliveryFee();
+}
+
+function getCairoHour() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: CONFIG.timeZone,
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date());
+
+  return Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+}
+
+function isStoreOpen() {
+  const hour = getCairoHour();
+  return hour >= CONFIG.openHour || hour < CONFIG.closeHour;
+}
+
+function updateStoreStatus() {
+  const open = isStoreOpen();
+  const status = $("storeStatus");
+  const light = $("statusLight");
+
+  status.textContent = open ? "We’re open — let’s make your day!" : "We’re taking a little freezer break.";
+  status.classList.toggle("is-open", open);
+  status.classList.toggle("is-closed", !open);
+  light.classList.toggle("status-light-open", open);
+
+  $("storeStatusDetail").textContent = "2:00 PM — 2:00 AM · Cairo time";
+  $("cartHoursNote").textContent = open
+    ? "The shop is open. You can send your order now."
+    : "The shop is currently closed. You can browse, but checkout is available from 2:00 PM to 2:00 AM Cairo time.";
+
+  $("checkoutOpen").disabled = !cart.length;
 }
 
 function renderProducts() {
-  $('#productGrid').innerHTML = PRODUCTS.map(product => `
+  const grid = $("productGrid");
+
+  grid.innerHTML = PRODUCTS.map((product) => `
     <article class="product-card" data-product="${product.id}">
-      <div class="product-image-wrap">
-        <img class="product-image" src="${product.image}" alt="${escapeHTML(product.alt)}" loading="lazy" width="600" height="750">
-        <span class="product-badge">${escapeHTML(product.badge)}</span>
+      <div class="product-visual">
+        <img
+          src="${escapeHTML(product.image)}"
+          alt="${escapeHTML(product.name)}"
+          loading="lazy"
+          onerror="this.hidden=true;this.nextElementSibling.hidden=false"
+        >
+        <span class="product-emoji" hidden aria-hidden="true">${product.emoji}</span>
       </div>
       <div class="product-card-body">
-        <div class="product-title-row"><h3>${escapeHTML(product.name)}</h3><span class="product-emoji" aria-hidden="true">${product.emoji}</span></div>
-        <p class="product-description">${escapeHTML(product.note)}</p>
+        <p class="product-kicker">${escapeHTML(product.kicker)}</p>
+        <h3>${escapeHTML(product.name)}</h3>
+        <p class="product-description">${escapeHTML(product.description)}</p>
         <div class="product-buy-row">
-          <span class="product-price">${money(product.price)} <span>/ each</span></span>
-          <div class="product-actions">
-            <div class="quantity-picker" aria-label="Choose ${escapeHTML(product.name)} quantity">
-              <button type="button" data-product-decrement="${product.id}" aria-label="Choose one fewer ${escapeHTML(product.name)}">−</button>
-              <span data-selected-quantity="${product.id}" aria-live="polite">1</span>
-              <button type="button" data-product-increment="${product.id}" aria-label="Choose one more ${escapeHTML(product.name)}">+</button>
-            </div>
-            <button class="add-button" type="button" data-add-product="${product.id}" aria-label="Add ${escapeHTML(product.name)} to bag">+</button>
-          </div>
+          <span class="product-price">${money(product.price)} <small>/ each</small></span>
+          <button class="button button-primary add-button" type="button" data-add="${product.id}">
+            Add to bag <span aria-hidden="true">+</span>
+          </button>
         </div>
       </div>
-    </article>`).join('');
+    </article>
+  `).join("");
 }
-
-function cartEntries() {
-  return Object.entries(cart).map(([id, quantity]) => ({ product: productById(id), quantity })).filter(entry => entry.product && entry.quantity > 0);
-}
-function subtotal() { return cartEntries().reduce((sum, entry) => sum + entry.product.price * entry.quantity, 0); }
-function itemCount() { return cartEntries().reduce((sum, entry) => sum + entry.quantity, 0); }
 
 function renderCart() {
-  const entries = cartEntries();
-  const count = itemCount();
-  $('#cartCount').textContent = count;
-  $('#drawerCount').textContent = count;
-  $('#clearCart').disabled = entries.length === 0;
-  $('#cartItems').innerHTML = entries.length ? entries.map(({ product, quantity }) => `
-    <div class="cart-line" data-cart-line="${product.id}">
-      <img src="${product.image}" alt="" width="58" height="67">
-      <div class="cart-line-copy"><strong>${escapeHTML(product.name)}</strong><small>${money(product.price)} each</small>
-        <div class="cart-line-controls">
-          <button type="button" data-cart-decrement="${product.id}" aria-label="Remove one ${escapeHTML(product.name)}">−</button>
-          <span>${quantity}</span>
-          <button type="button" data-cart-increment="${product.id}" aria-label="Add one ${escapeHTML(product.name)}">+</button>
-        </div>
-      </div>
-      <div class="cart-line-side"><strong>${money(product.price * quantity)}</strong><button class="remove-line" type="button" data-remove-item="${product.id}">Remove</button></div>
-    </div>`).join('') : '<div class="cart-empty"><b>✳</b>Your bag is taking a little sunny break.<br>Add a flavor to bring it back.</div>';
-  const itemsSubtotal = subtotal();
-  $('#cartSubtotal').textContent = money(itemsSubtotal);
-  $('#cartDelivery').textContent = entries.length ? money(DELIVERY_FEE) : money(0);
-  $('#cartTotal').textContent = money(itemsSubtotal + (entries.length ? DELIVERY_FEE : 0));
-  refreshStoreHours();
+  const count = cartQuantity();
+  $("cartCount").textContent = String(count);
+  $("drawerCount").textContent = String(count);
+  $("cartSubtotal").textContent = money(subtotal());
+  $("cartDelivery").textContent = money(deliveryFee());
+  $("cartTotal").textContent = money(total());
+  $("checkoutOpen").disabled = count === 0;
+
+  if (!cart.length) {
+    $("cartItems").innerHTML = `
+      <div class="empty-cart">
+        Your bag is taking a little nap.<br>Add a flavor to get started!
+      </div>`;
+  } else {
+    $("cartItems").innerHTML = cart.map((item) => {
+      const product = getProduct(item.id);
+      if (!product) return "";
+
+      return `
+        <article class="cart-item" data-product="${product.id}">
+          <div class="cart-item-art" aria-hidden="true">${product.emoji}</div>
+          <div>
+            <h3>${escapeHTML(product.name)}</h3>
+            <p class="cart-item-price">${money(product.price)} each · ${money(product.price * item.quantity)}</p>
+            <div class="quantity-controls" aria-label="Quantity for ${escapeHTML(product.name)}">
+              <button type="button" data-quantity="${product.id}" data-change="-1" aria-label="Remove one ${escapeHTML(product.name)}">−</button>
+              <span>${item.quantity}</span>
+              <button type="button" data-quantity="${product.id}" data-change="1" aria-label="Add one ${escapeHTML(product.name)}" ${item.quantity >= CONFIG.maxQuantity ? "disabled" : ""}>+</button>
+              <button type="button" class="remove-item" data-remove="${product.id}">Remove</button>
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+  }
+
+  saveCart();
+  updateStoreStatus();
 }
 
-function showToast(message) {
-  const node = $('#toast');
-  node.textContent = message;
-  node.classList.add('is-visible');
-  window.clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => node.classList.remove('is-visible'), 2600);
+function addToCart(id) {
+  const product = getProduct(id);
+  if (!product) return;
+
+  const existing = cart.find((item) => item.id === id);
+  if (existing) {
+    if (existing.quantity >= CONFIG.maxQuantity) {
+      showToast(`Maximum quantity is ${CONFIG.maxQuantity} per flavor.`);
+      return;
+    }
+    existing.quantity += 1;
+  } else {
+    cart.push({ id, quantity: 1 });
+  }
+
+  renderCart();
+  showToast(`${product.name} added to your bag!`);
 }
 
-function getCairoMinutes() {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
-  const hour = Number(parts.find(part => part.type === 'hour').value);
-  const minute = Number(parts.find(part => part.type === 'minute').value);
-  return hour * 60 + minute;
+function changeQuantity(id, change) {
+  const item = cart.find((entry) => entry.id === id);
+  if (!item) return;
+
+  item.quantity += change;
+  if (item.quantity <= 0) cart = cart.filter((entry) => entry.id !== id);
+  if (item.quantity > CONFIG.maxQuantity) item.quantity = CONFIG.maxQuantity;
+
+  renderCart();
 }
-function isStoreOpen() {
-  const minute = getCairoMinutes();
-  return minute >= 14 * 60 || minute < 2 * 60;
-}
-function refreshStoreHours() {
-  const open = isStoreOpen();
-  const status = $('#storeStatus');
-  const detail = $('#storeStatusDetail');
-  const light = $('#statusLight');
-  light.classList.toggle('status-light-open', open);
-  light.classList.toggle('status-light-closed', !open);
-  status.textContent = open ? 'Open now · we’re taking orders' : 'Closed for a little rest';
-  detail.textContent = open ? 'Here until 2:00 AM · Cairo time' : 'We open at 2:00 PM · Cairo time';
-  $('#checkoutOpen').disabled = itemCount() === 0 || !open;
-  $('#cartHoursNote').textContent = open ? 'Orders are open until 2:00 AM Cairo time.' : 'We’ll be back at 2:00 PM Cairo time. Your bag will be here.';
-  if ($('#confirmOrder')) $('#confirmOrder').disabled = !open;
-  if ($('#checkoutError') && !open && $('#checkoutDialog').open) $('#checkoutError').textContent = 'The shop is closed right now. Please send your order between 2:00 PM and 2:00 AM Cairo time.';
+
+function removeFromCart(id) {
+  cart = cart.filter((item) => item.id !== id);
+  renderCart();
+  showToast("Removed from your bag.");
 }
 
 function openCart() {
-  $('#cartDrawer').inert = false;
-  $('#cartDrawer').classList.add('is-open');
-  $('#cartDrawer').setAttribute('aria-hidden', 'false');
-  $('#cartOpen').setAttribute('aria-expanded', 'true');
-  $('#drawerBackdrop').hidden = false;
-  $('#cartClose').focus();
-}
-function closeCart() {
-  $('#cartDrawer').classList.remove('is-open');
-  $('#cartDrawer').setAttribute('aria-hidden', 'true');
-  $('#cartOpen').setAttribute('aria-expanded', 'false');
-  $('#drawerBackdrop').hidden = true;
-  window.setTimeout(() => { $('#cartDrawer').inert = true; }, 310);
-  $('#cartOpen').focus();
+  const drawer = $("cartDrawer");
+  $("drawerBackdrop").hidden = false;
+  drawer.inert = false;
+  drawer.setAttribute("aria-hidden", "false");
+  drawer.classList.add("is-open");
+  $("cartOpen").setAttribute("aria-expanded", "true");
+  document.body.style.overflow = "hidden";
+  $("cartClose").focus();
 }
 
-function contactLooksValid(value) {
-  const contact = value.trim();
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) return true;
-  const digits = contact.replace(/\D/g, '');
-  return digits.length >= 7 && /^[+0-9\s().-]+$/.test(contact);
+function closeCart() {
+  const drawer = $("cartDrawer");
+  drawer.classList.remove("is-open");
+  drawer.setAttribute("aria-hidden", "true");
+  drawer.inert = true;
+  $("drawerBackdrop").hidden = true;
+  $("cartOpen").setAttribute("aria-expanded", "false");
+  document.body.style.overflow = "";
+  $("cartOpen").focus();
 }
-function setCheckoutError(message) {
-  const node = $('#checkoutError');
-  node.textContent = message;
-  node.hidden = !message;
+
+function openCheckout() {
+  if (!cart.length) {
+    showToast("Add a flavor to your bag first.");
+    return;
+  }
+
+  if (!isStoreOpen()) {
+    showToast("The shop is closed. Checkout opens at 2:00 PM Cairo time.");
+    return;
+  }
+
+  if (!CONFIG.API_URL || !CONFIG.API_URL.endsWith("/exec")) {
+    showCheckoutError("The shop connection isn't configured yet. Add the deployed Apps Script /exec URL in script.js.");
+    return;
+  }
+
+  closeCart();
+  $("checkoutError").hidden = true;
+  $("checkoutFields").hidden = false;
+  $("reviewPanel").hidden = true;
+  $("checkoutDialog").showModal();
+  $("customerName").focus();
 }
-function readCheckout() {
-  const form = $('#checkoutForm');
-  if (!form.reportValidity()) return null;
-  const name = $('#customerName').value.trim();
-  const contact = $('#customerContact').value.trim();
-  if (name.length < 2) { setCheckoutError('Please enter the name you’d like us to use.'); $('#customerName').focus(); return null; }
-  if (!contactLooksValid(contact)) { setCheckoutError('Enter a valid phone number or email so the shop can reach you.'); $('#customerContact').focus(); return null; }
-  const entries = cartEntries();
-  if (!entries.length) { setCheckoutError('Your bag is empty. Pick a flavor first.'); return null; }
-  const notes = $('#orderNotes').value.trim();
-  const paymentMethod = $('input[name="paymentMethod"]:checked').value;
-  return { name, contact, notes, paymentMethod, items: entries.map(({ product, quantity }) => ({ id: product.id, quantity })), subtotal: subtotal(), deliveryFee: DELIVERY_FEE, total: subtotal() + DELIVERY_FEE };
+
+function closeCheckout() {
+  if ($("checkoutDialog").open) $("checkoutDialog").close();
 }
-function showReview(order) {
-  const lines = [
-    `Name: ${order.name}`,
-    `Contact: ${order.contact}`,
-    '',
-    ...cartEntries().map(({ product, quantity }) => `${quantity} × ${product.name}  —  ${money(product.price * quantity)}`),
-    '',
-    `Subtotal: ${money(order.subtotal)}`,
-    `Delivery: ${money(order.deliveryFee)}`,
-    `TOTAL: ${money(order.total)}`,
-    `Payment: ${order.paymentMethod}`,
-    ...(order.notes ? [`Note: ${order.notes}`] : [])
-  ];
-  $('#reviewLines').textContent = lines.join('\n');
-  $('#checkoutFields').hidden = true;
-  $('#reviewPanel').hidden = false;
-  setCheckoutError('');
-  $('#confirmOrder').focus();
+
+function showCheckoutError(message) {
+  const error = $("checkoutError");
+  error.textContent = message;
+  error.hidden = false;
 }
-function editCheckout() {
-  $('#reviewPanel').hidden = true;
-  $('#checkoutFields').hidden = false;
-  $('#reviewOrder').focus();
+
+function validateCheckout() {
+  const name = $("customerName").value.trim();
+  const contact = $("customerContact").value.trim();
+  const notes = $("orderNotes").value.trim();
+
+  if (name.length < 2) return "Please enter your name.";
+  if (!contact || contact.length < 5) return "Please enter a valid contact number or email.";
+  if (notes.length > 1000) return "Your note is too long.";
+  if (!cart.length) return "Your bag is empty.";
+  if (!isStoreOpen()) return "The shop is currently closed. Please order between 2:00 PM and 2:00 AM Cairo time.";
+
+  return "";
 }
-function makeRequestId() {
-  if (window.crypto && typeof window.crypto.randomUUID === 'function') return `dm_${window.crypto.randomUUID()}`;
-  return `dm_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+function selectedPaymentMethod() {
+  return document.querySelector('input[name="paymentMethod"]:checked')?.value || "InstaPay";
 }
-function allowedGoogleOrigin(origin) {
-  try {
-    const host = new URL(origin).hostname;
-    return host === 'script.google.com' || host.endsWith('.script.google.com') || host.endsWith('.googleusercontent.com');
-  } catch (_) { return false; }
+
+function buildOrderPayload() {
+  return {
+    requestId: createRequestId(),
+    name: $("customerName").value.trim(),
+    contact: $("customerContact").value.trim(),
+    notes: $("orderNotes").value.trim(),
+    paymentMethod: selectedPaymentMethod(),
+    items: cart.map((item) => ({ id: item.id, quantity: item.quantity }))
+  };
 }
+
+function createRequestId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `dm_${Date.now()}_${Math.random().toString(36).slice(2, 14)}`;
+}
+
+function showReview() {
+  $("checkoutError").hidden = true;
+  const error = validateCheckout();
+
+  if (error) {
+    showCheckoutError(error);
+    return;
+  }
+
+  const lines = cart.map((item) => {
+    const product = getProduct(item.id);
+    return `
+      <div class="review-line">
+        <span>${escapeHTML(product.name)} × ${item.quantity}</span>
+        <span>${money(product.price * item.quantity)}</span>
+      </div>`;
+  }).join("");
+
+  $("reviewLines").innerHTML = `
+    ${lines}
+    <div class="review-line"><span>Subtotal</span><span>${money(subtotal())}</span></div>
+    <div class="review-line"><span>Delivery</span><span>${money(deliveryFee())}</span></div>
+    <div class="review-line"><span>Payment</span><span>${escapeHTML(selectedPaymentMethod())}</span></div>
+    <div class="review-line total"><span>Total</span><span>${money(total())}</span></div>`;
+
+  $("checkoutFields").hidden = true;
+  $("reviewPanel").hidden = false;
+  $("confirmOrder").disabled = false;
+  $("confirmOrder").textContent = "Confirm order ✓";
+}
+
+function showToast(message) {
+  const toast = $("toast");
+  toast.textContent = message;
+  toast.classList.add("is-visible");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.remove("is-visible"), 3200);
+}
+
+/*
+ * Sends the order through a hidden form/iframe to avoid relying on
+ * cross-origin fetch permissions from GitHub Pages to Apps Script.
+ */
 function postOrder(payload) {
   return new Promise((resolve, reject) => {
-    if (!API_URL || !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(API_URL)) {
-      reject(new Error('The shop’s Google Apps Script URL is not connected yet. Follow SETUP.md, paste the /exec URL into script.js, and republish.'));
-      return;
-    }
-    const requestId = makeRequestId();
+    const frameName = `dardoma_submit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const iframe = document.createElement("iframe");
+    const form = document.createElement("form");
+    const payloadInput = document.createElement("input");
     let finished = false;
+
+    iframe.name = frameName;
+    iframe.title = "Order submission";
+    iframe.hidden = true;
+
+    form.method = "POST";
+    form.action = CONFIG.API_URL;
+    form.target = frameName;
+    form.hidden = true;
+
+    payloadInput.type = "hidden";
+    payloadInput.name = "payload";
+    payloadInput.value = JSON.stringify(payload);
+    form.appendChild(payloadInput);
+
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      clearTimeout(timeout);
+      form.remove();
+      iframe.remove();
+    };
+
     const finish = (error, result) => {
       if (finished) return;
       finished = true;
-      window.clearTimeout(timer);
-      window.removeEventListener('message', onMessage);
-      const target = document.querySelector(`iframe[name="${frameName}"]`);
-      const form = document.querySelector(`form[data-request="${requestId}"]`);
-      if (target) target.remove();
-      if (form) form.remove();
+      cleanup();
       error ? reject(error) : resolve(result);
     };
-    const frameName = `dardomaOrder_${requestId.replace(/[^a-zA-Z0-9_]/g, '')}`;
-    const onMessage = event => {
-      if (!allowedGoogleOrigin(event.origin) || !event.data || event.data.type !== 'DARDOMA_ORDER_RESULT' || event.data.requestId !== requestId) return;
-      if (!event.data.ok) finish(new Error(event.data.message || 'The shop could not receive that order. Please try again.'));
-      else finish(null, event.data);
+
+    const onMessage = (event) => {
+      if (!isTrustedAppsScriptOrigin(event.origin)) return;
+      const data = event.data;
+      if (!data || data.type !== "DARDOMA_ORDER_RESULT") return;
+      if (data.requestId && data.requestId !== payload.requestId) return;
+
+      if (data.ok && data.orderNumber && data.trackingCode) {
+        finish(null, data);
+      } else {
+        finish(new Error(data.message || "The shop couldn't accept the order. Please try again."));
+      }
     };
-    const timer = window.setTimeout(() => finish(new Error('The shop response took too long. Please check your connection and try again.')), 35000);
-    window.addEventListener('message', onMessage);
-    const iframe = document.createElement('iframe');
-    iframe.name = frameName;
-    iframe.title = 'Order submission response';
-    iframe.hidden = true;
-    iframe.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(iframe);
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = API_URL;
-    form.target = frameName;
-    form.hidden = true;
-    form.dataset.request = requestId;
-    const field = document.createElement('input');
-    field.type = 'hidden';
-    field.name = 'payload';
-    field.value = JSON.stringify({ ...payload, requestId });
-    form.appendChild(field);
-    document.body.appendChild(form);
-    form.submit();
+
+    const timeout = setTimeout(() => {
+      finish(new Error("The order confirmation timed out. Check your connection before trying again."));
+    }, 30000);
+
+    window.addEventListener("message", onMessage);
+    document.body.append(iframe, form);
+
+    try {
+      form.submit();
+    } catch (error) {
+      finish(new Error("Couldn't send the order. Please try again."));
+    }
   });
 }
 
-function submitCheckout() {
-  if (!isStoreOpen()) { refreshStoreHours(); return; }
-  if (!API_URL) { setCheckoutError('The shop’s Google Apps Script URL is not connected yet. See SETUP.md to connect Google Form and Sheets before taking live orders.'); return; }
-  const order = readCheckout();
-  if (!order) return;
-  const button = $('#confirmOrder');
+function isTrustedAppsScriptOrigin(origin) {
+  try {
+    const hostname = new URL(origin).hostname;
+    return hostname === "script.google.com" ||
+      hostname.endsWith(".script.google.com") ||
+      hostname === "googleusercontent.com" ||
+      hostname.endsWith(".googleusercontent.com");
+  } catch {
+    return false;
+  }
+}
+
+async function submitOrder() {
+  if (submitting) return;
+
+  const error = validateCheckout();
+  if (error) {
+    showCheckoutError(error);
+    $("checkoutFields").hidden = false;
+    $("reviewPanel").hidden = true;
+    return;
+  }
+
+  if (!CONFIG.API_URL || !CONFIG.API_URL.endsWith("/exec")) {
+    showCheckoutError("The shop connection isn't configured yet. Add your Apps Script /exec URL in script.js.");
+    return;
+  }
+
+  submitting = true;
+  const button = $("confirmOrder");
   button.disabled = true;
-  button.textContent = 'Sending your order…';
-  setCheckoutError('');
-  postOrder(order).then(result => {
-    cart = {};
-    persistCart();
-    $('#checkoutDialog').close();
-    $('#confirmedOrderNumber').textContent = result.orderNumber;
-    $('#confirmedTrackingCode').textContent = result.trackingCode;
-    $('#confirmationTotal').textContent = `Your total: ${money(Number(result.total) || order.total)}`;
-    $('#confirmationDialog').showModal();
-    $('#trackingMessage').hidden = true;
-    $('#trackOrder').value = result.orderNumber;
-    $('#trackCode').value = result.trackingCode;
-  }).catch(error => {
-    setCheckoutError(error.message || 'We couldn’t send the order. Please try again.');
-  }).finally(() => {
-    button.disabled = !isStoreOpen();
-    button.innerHTML = 'Confirm order <span aria-hidden="true">✓</span>';
-  });
+  button.textContent = "Sending your order…";
+  $("checkoutError").hidden = true;
+
+  try {
+    const payload = buildOrderPayload();
+    const result = await postOrder(payload);
+
+    $("checkoutDialog").close();
+    $("confirmedOrderNumber").textContent = result.orderNumber;
+    $("confirmedTrackingCode").textContent = result.trackingCode;
+    $("confirmationTotal").textContent = `Order total: ${money(result.total)}`;
+
+    // The cart is only cleared after the server confirms the order.
+    cart = [];
+    renderCart();
+
+    $("confirmationDialog").showModal();
+    $("confirmationClose").focus();
+  } catch (error) {
+    showCheckoutError(error.message || "Something went wrong. Please try again.");
+    $("checkoutFields").hidden = false;
+    $("reviewPanel").hidden = true;
+  } finally {
+    submitting = false;
+    button.disabled = false;
+    button.textContent = "Confirm order ✓";
+  }
 }
 
-function showTrackingMessage(message, error = false) {
-  const node = $('#trackingMessage');
+function showTrackingMessage(message, success = false) {
+  const node = $("trackingMessage");
   node.textContent = message;
-  node.classList.toggle('error', error);
   node.hidden = false;
-  $('#trackingResult').hidden = true;
-}
-function getTracking(orderNumber, trackingCode) {
-  return new Promise((resolve, reject) => {
-    if (!API_URL) { reject(new Error('Order tracking isn’t connected yet. The shop owner needs to deploy Code.gs and set its /exec URL in script.js.')); return; }
-    if (activeTrackingScript) activeTrackingScript.remove();
-    const callbackName = `dardomaTrack_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    let done = false;
-    const cleanup = () => {
-      window.clearTimeout(timeout);
-      delete window[callbackName];
-      if (activeTrackingScript) { activeTrackingScript.remove(); activeTrackingScript = null; }
-    };
-    const timeout = window.setTimeout(() => {
-      if (done) return;
-      done = true; cleanup(); reject(new Error('Tracking took too long. Please check your connection and try again.'));
-    }, 20000);
-    window[callbackName] = data => {
-      if (done) return;
-      done = true; cleanup();
-      data && data.ok ? resolve(data) : reject(new Error((data && data.message) || 'We couldn’t find that order. Check both details and try again.'));
-    };
-    activeTrackingScript = document.createElement('script');
-    activeTrackingScript.src = `${API_URL}?action=track&orderNumber=${encodeURIComponent(orderNumber)}&trackingCode=${encodeURIComponent(trackingCode)}&callback=${encodeURIComponent(callbackName)}`;
-    activeTrackingScript.onerror = () => { if (!done) { done = true; cleanup(); reject(new Error('Tracking service unavailable. Please try again in a moment.')); } };
-    document.head.appendChild(activeTrackingScript);
-  });
-}
-function renderTracking(data) {
-  $('#trackingMessage').hidden = true;
-  $('#trackedOrderNumber').textContent = data.orderNumber;
-  $('#trackedStatus').textContent = data.status;
-  const currentIndex = ORDER_STATUSES.indexOf(data.status);
-  $('#statusSteps').innerHTML = ORDER_STATUSES.map((status, index) => `<li class="${index < currentIndex ? 'is-done' : ''} ${index === currentIndex ? 'is-current' : ''}" ${index === currentIndex ? 'aria-current="step"' : ''}>${escapeHTML(status)}</li>`).join('');
-  const meta = [];
-  if (data.createdAt) meta.push(`Placed ${new Date(data.createdAt).toLocaleString('en-EG', { timeZone: 'Africa/Cairo', dateStyle: 'medium', timeStyle: 'short' })} Cairo time`);
-  if (Number.isFinite(Number(data.total))) meta.push(`Total ${money(Number(data.total))}`);
-  $('#trackedMeta').textContent = meta.join(' · ');
-  const hasMap = data.status === 'Out for Delivery' && Number.isFinite(Number(data.latitude)) && Number.isFinite(Number(data.longitude)) && Math.abs(Number(data.latitude)) <= 90 && Math.abs(Number(data.longitude)) <= 180;
-  const map = $('#deliveryMap');
-  map.hidden = !hasMap;
-  if (hasMap) $('#mapFrame').src = `https://www.google.com/maps?q=${encodeURIComponent(`${Number(data.latitude)},${Number(data.longitude)}`)}&z=15&output=embed`;
-  else $('#mapFrame').removeAttribute('src');
-  $('#trackingResult').hidden = false;
+  node.classList.toggle("success", success);
 }
 
-$('#productGrid').addEventListener('click', event => {
-  const increment = event.target.closest('[data-product-increment]');
-  const decrement = event.target.closest('[data-product-decrement]');
-  const add = event.target.closest('[data-add-product]');
-  if (increment || decrement) {
-    const control = increment || decrement;
-    const id = control.dataset.productIncrement || control.dataset.productDecrement;
-    const selected = $(`[data-selected-quantity="${id}"]`);
-    selected.textContent = Math.min(20, Math.max(1, Number(selected.textContent) + (increment ? 1 : -1)));
+function hideTrackingResult() {
+  $("trackingResult").hidden = true;
+  $("deliveryMap").hidden = true;
+  $("mapFrame").removeAttribute("src");
+}
+
+function trackOrder(orderNumber, trackingCode) {
+  return new Promise((resolve, reject) => {
+    if (!CONFIG.API_URL || !CONFIG.API_URL.endsWith("/exec")) {
+      reject(new Error("Order tracking isn't configured yet."));
+      return;
+    }
+
+    const callback = `dardomaTrack_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const script = document.createElement("script");
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Tracking took too long. Please try again."));
+    }, 15000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[callback];
+      script.remove();
+    }
+
+    window[callback] = (result) => {
+      cleanup();
+      if (result && result.ok) resolve(result);
+      else reject(new Error(result?.message || "Order not found. Check both codes and try again."));
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Couldn't connect to the tracking service. Please try again."));
+    };
+
+    const url = new URL(CONFIG.API_URL);
+    url.searchParams.set("action", "track");
+    url.searchParams.set("orderNumber", orderNumber);
+    url.searchParams.set("trackingCode", trackingCode);
+    url.searchParams.set("callback", callback);
+
+    script.src = url.toString();
+    document.body.appendChild(script);
+  });
+}
+
+function renderTracking(result) {
+  const statusIndex = ORDER_STATUSES.indexOf(result.status);
+  $("trackedOrderNumber").textContent = result.orderNumber;
+  $("trackedStatus").textContent = result.status;
+  $("statusSteps").innerHTML = ORDER_STATUSES.map((status, index) => `
+    <li class="${index <= statusIndex ? "done" : ""}">${escapeHTML(status)}</li>
+  `).join("");
+
+  const created = result.createdAt ? new Date(result.createdAt) : null;
+  $("trackedMeta").textContent =
+    `Total: ${money(result.total)}${created && !Number.isNaN(created.getTime()) ? ` · Placed ${created.toLocaleString()}` : ""}`;
+
+  const hasCoordinates = Number.isFinite(Number(result.latitude)) &&
+    Number.isFinite(Number(result.longitude)) &&
+    result.latitude !== "" && result.longitude !== "" &&
+    Number(result.latitude) >= -90 && Number(result.latitude) <= 90 &&
+    Number(result.longitude) >= -180 && Number(result.longitude) <= 180;
+
+  if (result.status === "Out for Delivery" && hasCoordinates) {
+    const lat = Number(result.latitude);
+    const lng = Number(result.longitude);
+    $("deliveryMap").hidden = false;
+    $("mapFrame").src = `https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
+  } else {
+    $("deliveryMap").hidden = true;
+    $("mapFrame").removeAttribute("src");
   }
-  if (add) {
-    const id = add.dataset.addProduct;
-    const selected = $(`[data-selected-quantity="${id}"]`);
-    cart[id] = Math.min(99, (cart[id] || 0) + Number(selected.textContent));
-    selected.textContent = '1';
-    persistCart();
-    add.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(1)' }], { duration: 230, easing: 'ease-out' });
-    showToast(`${productById(id).name} added to your little bag`);
+
+  $("trackingResult").hidden = false;
+}
+
+function closeConfirmation() {
+  if ($("confirmationDialog").open) $("confirmationDialog").close();
+}
+
+function initEvents() {
+  $("productGrid").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-add]");
+    if (button) addToCart(button.dataset.add);
+  });
+
+  $("cartItems").addEventListener("click", (event) => {
+    const quantityButton = event.target.closest("[data-quantity]");
+    const removeButton = event.target.closest("[data-remove]");
+
+    if (quantityButton) {
+      changeQuantity(quantityButton.dataset.quantity, Number(quantityButton.dataset.change));
+    } else if (removeButton) {
+      removeFromCart(removeButton.dataset.remove);
+    }
+  });
+
+  $("cartOpen").addEventListener("click", openCart);
+  $("cartClose").addEventListener("click", closeCart);
+  $("drawerBackdrop").addEventListener("click", closeCart);
+
+  $("clearCart").addEventListener("click", () => {
+    cart = [];
+    renderCart();
+    showToast("Your bag is now empty.");
+  });
+
+  $("checkoutOpen").addEventListener("click", openCheckout);
+  $("checkoutClose").addEventListener("click", closeCheckout);
+
+  $("checkoutDialog").addEventListener("click", (event) => {
+    if (event.target === $("checkoutDialog")) closeCheckout();
+  });
+
+  $("reviewOrder").addEventListener("click", showReview);
+
+  $("editOrder").addEventListener("click", () => {
+    $("reviewPanel").hidden = true;
+    $("checkoutFields").hidden = false;
+    $("checkoutError").hidden = true;
+  });
+
+  $("confirmOrder").addEventListener("click", submitOrder);
+  $("confirmationClose").addEventListener("click", closeConfirmation);
+
+  $("confirmationDialog").addEventListener("click", (event) => {
+    if (event.target === $("confirmationDialog")) closeConfirmation();
+  });
+
+  $("followOrder").addEventListener("click", () => {
+    const orderNumber = $("confirmedOrderNumber").textContent;
+    const trackingCode = $("confirmedTrackingCode").textContent;
+    closeConfirmation();
+    $("trackOrder").value = orderNumber;
+    $("trackCode").value = trackingCode;
+    $("track").scrollIntoView({ behavior: "smooth" });
+    $("trackCode").focus({ preventScroll: true });
+    runTracking(orderNumber, trackingCode);
+  });
+
+  $("trackingForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const orderNumber = $("trackOrder").value.trim().toUpperCase();
+    const trackingCode = $("trackCode").value.trim().toUpperCase();
+    await runTracking(orderNumber, trackingCode);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && $("cartDrawer").classList.contains("is-open")) {
+      closeCart();
+    }
+  });
+}
+
+async function runTracking(orderNumber, trackingCode) {
+  $("trackingMessage").hidden = true;
+  hideTrackingResult();
+
+  if (!orderNumber || !trackingCode) {
+    showTrackingMessage("Enter both your order number and private tracking code.");
+    return;
   }
-});
-$('#cartItems').addEventListener('click', event => {
-  const inc = event.target.closest('[data-cart-increment]');
-  const dec = event.target.closest('[data-cart-decrement]');
-  const remove = event.target.closest('[data-remove-item]');
-  if (inc) cart[inc.dataset.cartIncrement] = Math.min(99, (cart[inc.dataset.cartIncrement] || 0) + 1);
-  if (dec) {
-    const id = dec.dataset.cartDecrement;
-    cart[id] = (cart[id] || 0) - 1;
-    if (cart[id] <= 0) delete cart[id];
+
+  showTrackingMessage("Looking for your order…");
+
+  try {
+    const result = await trackOrder(orderNumber, trackingCode);
+    $("trackingMessage").hidden = true;
+    renderTracking(result);
+  } catch (error) {
+    showTrackingMessage(error.message || "Couldn't find that order.");
   }
-  if (remove) delete cart[remove.dataset.removeItem];
-  if (inc || dec || remove) persistCart();
-});
-$('#cartOpen').addEventListener('click', openCart);
-$('#cartClose').addEventListener('click', closeCart);
-$('#drawerBackdrop').addEventListener('click', closeCart);
-$('#clearCart').addEventListener('click', () => {
-  if (!itemCount()) return;
-  if (window.confirm('Clear every flavor from your bag?')) { cart = {}; persistCart(); showToast('Your bag is all clear.'); }
-});
-$('#checkoutOpen').addEventListener('click', () => {
-  if (!itemCount()) return;
-  if (!isStoreOpen()) { refreshStoreHours(); return; }
-  closeCart();
-  $('#reviewPanel').hidden = true;
-  $('#checkoutFields').hidden = false;
-  setCheckoutError('');
-  $('#checkoutForm').reset();
-  $('#checkoutDialog').showModal();
-  $('#customerName').focus();
-});
-$('#checkoutClose').addEventListener('click', () => $('#checkoutDialog').close());
-$('#reviewOrder').addEventListener('click', () => {
-  setCheckoutError('');
-  const order = readCheckout();
-  if (order) showReview(order);
-});
-$('#editOrder').addEventListener('click', editCheckout);
-$('#confirmOrder').addEventListener('click', submitCheckout);
-$('#checkoutDialog').addEventListener('close', () => setCheckoutError(''));
-$('#confirmationClose').addEventListener('click', () => $('#confirmationDialog').close());
-$('#followOrder').addEventListener('click', () => {
-  $('#confirmationDialog').close();
-  document.querySelector('#track').scrollIntoView({ behavior: 'smooth' });
-  window.setTimeout(() => $('#trackCode').focus({ preventScroll: true }), 400);
-});
-$('#trackingForm').addEventListener('submit', event => {
-  event.preventDefault();
-  const orderNumber = $('#trackOrder').value.trim().toUpperCase();
-  const trackingCode = $('#trackCode').value.trim();
-  if (orderNumber.length < 8 || trackingCode.length < 8) { showTrackingMessage('Enter the order number and the full private tracking code from your confirmation.', true); return; }
-  $('#trackingMessage').hidden = true;
-  $('#trackingResult').hidden = true;
-  getTracking(orderNumber, trackingCode).then(renderTracking).catch(error => showTrackingMessage(error.message, true));
-});
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && $('#cartDrawer').classList.contains('is-open')) closeCart(); });
-renderProducts();
-renderCart();
-window.setInterval(refreshStoreHours, 60 * 1000);
+}
+
+function init() {
+  renderProducts();
+  renderCart();
+  updateStoreStatus();
+  initEvents();
+
+  // Refresh the open/closed label as time changes.
+  window.setInterval(updateStoreStatus, 60 * 1000);
+}
+
+document.addEventListener("DOMContentLoaded", init);
